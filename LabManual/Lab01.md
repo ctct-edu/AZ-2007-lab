@@ -52,76 +52,93 @@ lab:
 
 ## 演習 1: GitHub Copilot 拡張機能を Visual Studio Code 用に構成する
 
-### 目標
-GitHub アカウントを使用してVisual Studio CodeでGitHub Copilotを利用できるようにセットアップします。
-
 ### 手順
 
-#### ステップ 1: GitHub アカウントにサインイン
-
-1. **ブラウザーを起動**し、新しいウィンドウを開きます
-
-2. **GitHub Enterprise ポータル**にアクセスします
-   ```plaintext
-   https://github.com/enterprises/Microsoft-APL/sso
-   ```
-
-3. **サインイン情報を入力**します
-   - メールアドレス/ユーザー名: `@lab.CloudPortalCredential(1).Username`
-   - パスワード: `@lab.CloudPortalCredential(1).Password`
-
-   > **ポイント**: この認証情報は研修環境専用です
-
-#### ステップ 2: Visual Studio Code に GitHub Copilot をインストール
+#### ステップ 1: Visual Studio Code の起動とGitHub Copilot の連携状態を確認
 
 1. **Visual Studio Code を起動**します
 
-2. **拡張機能ビューを開く**
-   - 左サイドバーの**拡張機能アイコン**（四角いブロックのアイコン）をクリック
-   - または **Ctrl+Shift+X** を押下
+2. **GitHub Copilot のアイコンを探します**
+   - Visual Studio Code画面の右下（ステータスバー）を確認
+   - GitHub Copilotのアイコン（チェックマークまたは警告マークが表示されているアイコン）を探してください
 
-3. **GitHub Copilot を検索**
-   - 検索ボックスに「**GitHub Copilot**」と入力
-   - **Enter** を押下
+   **アイコンの状態による判別方法**：
+   - チェックマーク付き：すでに連携済み（この演習は完了しています）
+   - 警告マーク付き：連携が必要（次のステップに進んでください）
 
-4. **拡張機能をインストール**
-   - 検索結果から「**GitHub Copilot**」（GitHub製）を選択
-   - 青い **[インストール]** ボタンをクリック
+3. **連携が必要な場合の確認**
+   - GitHub Copilotアイコンをクリック
+   - 表示されるメニューを確認してください
 
-   > **注意**: 類似名の拡張機能があります。必ず「GitHub」が作成者であることを確認してください
+#### ステップ 2: GitHub アカウントとの連携
 
-#### ステップ 3: GitHub アカウントと連携
+**重要**：この手順は、GitHub Copilotが未連携の場合のみ実行してください。
 
-1. **サインイン通知を確認**
-   - 「Sign in to use GitHub Copilot」という通知が表示されたら **[Sign in to GitHub]** をクリック
-   - 通知が表示されない場合は次のステップに進んでください
+1. **サインインプロセスの開始**
+   
+   以下のいずれかの方法でサインインを開始します：
 
-2. **認証ダイアログの処理**
-   - 「GitHub Copilot wants to sign in using GitHub」というダイアログが表示された場合
-   - **[Allow]**（許可）をクリック
+   **方法A：ステータスバーから**
+   - 画面右下のGitHub Copilotアイコンをクリック
+   - 表示されるメニューから **GitHub にサインイン** を選択
 
-3. **ブラウザでの認証**
-   - ブラウザで「Verify Session」ページが開きます
-   - **[Continue]** をクリック
+   **方法B：通知メッセージから**
+   - 画面右下に「Sign in to use GitHub Copilot」という通知が表示されている場合
+   - 通知内の **Sign in to GitHub** ボタンをクリック
 
-4. **アプリケーション認証**
-   - 「Authorize Application」ページで **[Authorize Visual Studio Code]** をクリック
-   - 「VS Codeで開く」ダイアログが表示されたら **[開く]** をクリック
+2. **認証ダイアログへの対応**
+   
+   「GitHub Copilot wants to sign in using GitHub」というダイアログが表示されます：
+   - **Allow**（許可する）ボタンをクリック
 
-#### ステップ 4: インストール完了の確認
+   **補足説明**：このダイアログは、Visual Studio CodeがあなたのGitHubアカウント情報にアクセスする許可を求めています。
 
-1. **Visual Studio Code を再起動**
-   - アプリケーションを完全に終了して再度開く
-   - これにより GitHub Copilot が完全に統合されます
+3. **ブラウザでの認証手続き**
 
-2. **統合状態を確認**
-   - 画面上部のコマンドセンター右側に **「チャットを開く」** ボタンが表示されていることを確認
-   - このボタンが表示されていれば設定完了です
+   ブラウザが自動的に開き、GitHubの認証ページが表示されます：
 
-> **完了チェック**: 
-> - GitHub Copilot拡張機能がインストール済み
-> - GitHubアカウントでの認証が完了
-> - 「チャットを開く」ボタンが表示される
+   **「Verify Session」ページでの操作**：
+   - ページに表示される8桁のコードを確認
+   - **Continue** ボタンをクリック
+
+   **「Authorize Application」ページでの操作**：
+   - 「Visual Studio Code wants to access your GitHub account」というメッセージを確認
+   - **Authorize Visual Studio Code**（Visual Studio Codeを認証する）ボタンをクリック
+
+4. **Visual Studio Code への戻り**
+
+   認証完了後、以下のダイアログが表示される場合があります：
+   - 「このサイトが"Visual Studio Code"を開こうとしています」
+   - または「VS Codeで開きますか？」
+   
+   どちらの場合も：
+   - **開く** ボタンをクリック
+
+#### ステップ 3: 連携完了の確認
+
+1. **Visual Studio Code の再起動**（推奨）
+   
+   連携設定を確実に反映させるため、一度Visual Studio Codeを再起動します：
+   - Visual Studio Codeを完全に終了
+   - 再度Visual Studio Codeを起動
+   - AccelerateDevGitHubCopilotフォルダーを開く（必要な場合）
+
+2. **連携状態の最終確認**
+
+   以下の項目を確認してください：
+
+   **確認項目1：チャット機能の表示**
+   - 画面上部のツールバー（コマンドセンター）の右側を確認
+   - **チャットを開く** ボタン（吹き出しアイコン）が表示されていることを確認
+
+   **確認項目2：GitHub Copilotの状態**
+   - 画面右下のステータスバーでGitHub Copilotアイコンを確認
+   - チェックマーク付きのアイコンが表示されていることを確認
+
+   **確認項目3：チャット機能の動作確認**
+   - **チャットを開く** ボタンをクリック
+   - 画面右側にチャットパネルが表示されることを確認
+   - メッセージ入力欄が表示されていることを確認
 
 ---
 
