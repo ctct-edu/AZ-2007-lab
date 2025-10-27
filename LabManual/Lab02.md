@@ -2,262 +2,168 @@
 
 ## 概要
 
-このラボでは、GitHub Copilotを活用して図書館アプリケーションに新しい「書籍の在庫確認」機能を追加します。実際の開発現場で使われる手法（ブランチ作成、機能開発、プルリクエスト）を体験しながら、AI支援開発の効果を実感していただきます。
+このラボでは、GitHub Copilotを活用して在庫管理システムに新しい「低在庫アラート機能」を追加します。AI支援開発の効果を実感しながら、実践的な機能開発を体験していただきます。
 
 ---
 
-## 演習5: 新しい「書籍の在庫確認」機能を開発する
+## 演習5: 新しい「低在庫アラート機能」を開発する
 
 ### 演習の目標
-司書が書籍の貸出状況を素早く確認できる機能を追加し、図書館業務の効率化を図ります。
+倉庫担当者が在庫不足の商品を素早く確認できる機能を追加し、発注漏れを防止します。
 
 ### 実装する機能
-- **新機能名**: SearchBooks（書籍検索）
-- **機能概要**: 書籍タイトルで検索し、貸出可能か貸出中かを表示
+- **新機能名**: CheckLowStock（低在庫確認）
+- **機能概要**: 最小在庫数を下回っている商品を検索し、アラートを表示
 - **表示メッセージ例**:
-  - 「Book Oneは貸出可能です」
-  - 「Book Oneは別の利用者に貸し出されています。返却期限は2024-01-15です」
+  - 「低在庫商品が3件見つかりました」
+  - 「P001 | ノートPC | 現在在庫: 3 / 最小在庫: 5 - 発注推奨」
 
 ---
 
-## タスク1: 開発用ブランチの作成
-
-### ステップ1: 現在の状態を確認
-
-1. **Visual Studio Codeで AccelerateDevGitHubCopilot プロジェクトが開かれていることを確認**
-   - プロジェクトが開かれていない場合は、Lab01で作成したプロジェクトフォルダーを開いてください
-
-2. **ソース管理ビューを開く**
-   - 左サイドバーの**ソース管理アイコン**（Y字型のアイコン）をクリック
-   - または **Ctrl + Shift + G** キーを押下
-
-3. **リモートリポジトリとの同期確認**
-   - 画面下部のステータスバーに「同期」「プル」「プッシュ」ボタンが表示されている場合
-   - **「同期」** ボタンをクリックして最新状態にしてください
-   - 認証ダイアログが表示された場合は、GitHubアカウントで承認してください
-
-**重要**: すべての変更がリモートリポジトリと同期されていることを確認してください
-
-### ステップ2: 新しいブランチを作成
-
-1. **現在のブランチを確認**
-   - 画面左下のステータスバーに **「main」** と表示されていることを確認
-   - この表示がブランチ名を示しています
-   
-2. **新しいブランチを作成**
-   - 左下の **「main」** 表示をクリック
-   - **注意**: クリックすると上部にコマンドパレットが開きます
-   - 表示されたメニューで **「+ 新しいブランチの作成」** を選択
-   - ブランチ名として **「book-availability」** と入力
-   - **Enter** キーを押下
-
-3. **ブランチをリモートに公開**
-   - 新しいブランチ作成後、ソース管理ビュー内のリポジトリが **「book-availability」** に切り替わり、右側に **「ブランチの発行」** ボタンが表示されます。
-   - **「ブランチの発行」** をクリック
-   - GitHub認証が求められた場合は **「許可」** をクリックして承認してください
-
-**完了確認**: 左下の表示が **「book-availability」** に変わったことを確認してください
-
----
-
-## タスク2: 新しいSearchBooksアクションの実装
+## タスク1: Program.csの更新
 
 ### 作業対象ファイル
-以下のファイルを順番に更新していきます：
-1. `CommonActions.cs` - 新しいアクション定義を追加
-2. `ConsoleApp.cs` - ユーザーインターフェース部分を更新
+以下のファイルを更新していきます：
+1. `Program.cs` - メニューとメイン処理の追加
 
-### ステップ1: CommonActions列挙型を更新
+### ステップ1: Program.csファイルを開く
 
 1. **ソリューションエクスプローラービューを開く**
    - 左サイドバーの**フォルダーアイコン**をクリック
    - **注意**: 「エクスプローラー」ではなく「ソリューション エクスプローラー」を使用してください
 
-2. **CommonActions.csファイルを開く**
+2. **Program.csファイルを開く**
    - ソリューションエクスプローラーで以下の階層を辿ります：
      ```
-     AccelerateDevGitHubCopilot
+     InventoryManagementApp
      └── src
-         └── Library.Console
-             └── CommonActions.cs
+         └── InventoryManagement.Console
+             └── Program.cs
      ```
-   - **CommonActions.cs** ファイルをダブルクリックして開きます
+   - **Program.cs** ファイルをダブルクリックして開きます
 
-3. **CommonActions列挙型全体を選択**
+### ステップ2: メニュー表示の更新
+
+1. **ShowMenuメソッドを探す**
+   - ファイルが開いたら **Ctrl + F** で検索ダイアログを開く
+   - **「ShowMenu」** と入力して検索
+   - **Enter** で該当箇所にジャンプ
+
+2. **ShowMenuメソッド全体を選択**
    ```csharp
-   [Flags]
-   public enum CommonActions
+   static void ShowMenu()
    {
-       Repeat = 0,
-       Select = 1,
-       Quit = 2,
-       SearchPatrons = 4,
-       RenewPatronMembership = 8,
-       ReturnLoanedBook = 16,
-       ExtendLoanedBook = 32
+       Console.WriteLine("1. 商品一覧表示");
+       Console.WriteLine("2. 商品登録");
+       Console.WriteLine("3. 在庫確認");
+       Console.WriteLine("4. 入庫処理");
+       Console.WriteLine("5. 出庫処理");
+       Console.WriteLine("6. 発注推奨リスト表示");
+       Console.WriteLine("0. 終了");
    }
    ```
-   **操作手順**: 列挙型の開始行から終了行まで全体をドラッグして選択してください
 
-4. **GitHub Copilotで新しいアクションを追加**
+3. **GitHub Copilotでメニュー項目を追加**
    - 選択状態で **Ctrl + I** キーを押してインラインチャットを開く
    - **重要**: インラインチャットが開かない場合は、GitHub Copilot拡張機能が有効になっているか確認してください
    - 以下のプロンプトを日本語で入力：
    ```plaintext
-   選択範囲を更新して、新しい SearchBooks アクションを追加してください。値は64を使用してください。
+   選択範囲を更新して、「7. 低在庫アラート表示」メニュー項目を追加してください。
    ```
    - **Enter** キーを押下
 
-5. **生成されたコードを確認して承諾**
+4. **生成されたコードを確認して承諾**
    - 以下のような結果が表示されることを確認：
    ```csharp
-   [Flags]
-   public enum CommonActions
+   static void ShowMenu()
    {
-       Repeat = 0,
-       Select = 1,
-       Quit = 2,
-       SearchPatrons = 4,
-       RenewPatronMembership = 8,
-       ReturnLoanedBook = 16,
-       ExtendLoanedBook = 32,
-       SearchBooks = 64
+       Console.WriteLine("1. 商品一覧表示");
+       Console.WriteLine("2. 商品登録");
+       Console.WriteLine("3. 在庫確認");
+       Console.WriteLine("4. 入庫処理");
+       Console.WriteLine("5. 出庫処理");
+       Console.WriteLine("6. 発注推奨リスト表示");
+       Console.WriteLine("7. 低在庫アラート表示");
+       Console.WriteLine("0. 終了");
    }
    ```
    - 内容が正しければ **「承諾」** または **「同意する」** をクリック
 
-### ステップ2: メニューオプション表示機能を更新
+### ステップ3: Mainメソッドのswitch文を更新
 
-1. **ConsoleApp.csファイルを開く**
-   - ソリューションエクスプローラーで以下の階層を辿ります：
-     ```
-     AccelerateDevGitHubCopilot
-     └── src
-         └── Library.Console
-             └── ConsoleApp.cs
-     ```
+1. **Mainメソッド内のswitch文を検索**
+   - **Ctrl + F** で **「switch (input)」** を検索
+   - Mainメソッド内のswitch文を特定
 
-2. **WriteInputOptionsメソッドを検索**
-   - ファイルが開いたら **Ctrl + F** で検索ダイアログを開く
-   - **「WriteInputOptions」** と入力して検索
-   - **Enter** で該当箇所にジャンプ
-
-3. **WriteInputOptionsメソッド全体を選択**
+2. **switch文全体を選択**
    ```csharp
-   static void WriteInputOptions(CommonActions options)
+   switch (input)
    {
-       Console.WriteLine("Input Options:");
-       // メソッドの内容全体を選択
-       // 最後の } まで含めて選択
+       case "1":
+           ShowAllProducts(productService);
+           break;
+       case "2":
+           AddNewProduct(productService);
+           break;
+       case "3":
+           CheckStock(stockService);
+           break;
+       case "4":
+           ProcessStockIn(stockService);
+           break;
+       case "5":
+           ProcessStockOut(stockService);
+           break;
+       case "6":
+           ShowReorderList(orderService);
+           break;
+       case "0":
+           Console.WriteLine("終了します。");
+           return;
+       default:
+           Console.WriteLine("無効な入力です。");
+           break;
    }
    ```
 
-4. **GitHub Copilotで機能を追加**
+3. **GitHub Copilotでケースを追加**
    - 選択状態で **Ctrl + I** でインラインチャットを開く
    - 以下のプロンプトを入力：
    ```plaintext
-   選択範囲を更新して、CommonActions.SearchBooks アクションのオプションを追加してください。文字「b」と「書籍の在庫確認」メッセージを使用してください。
+   選択範囲を更新して、case "7"を追加してください。ShowLowStockAlertメソッドを呼び出すようにしてください。productServiceとstockServiceを引数として渡してください。
    ```
 
-5. **生成されたコードを確認**
-   - 以下のようなif文が追加されることを確認：
-   ```csharp
-   if (options.HasFlag(CommonActions.SearchBooks))
-   {
-       Console.WriteLine(" - \"b\" で書籍の在庫確認");
-   }
-   ```
-   - 適切な位置（他のオプション表示と同じ場所）に追加されていることを確認
-
-### ステップ3: 入力処理機能を更新
-
-1. **ReadInputOptionsメソッドを検索**
-   - 同じファイル内で **Ctrl + F** で **「ReadInputOptions」** を検索
-   - **注意**: このメソッドはやや長いメソッドです
-
-2. **switch文のある部分を特定**
-   ```csharp
-   action = userInput switch
-   {
-       "q" when options.HasFlag(CommonActions.Quit) => CommonActions.Quit,
-       "s" when options.HasFlag(CommonActions.SearchPatrons) => CommonActions.SearchPatrons,
-       // この部分にさらにケースがあります
-   };
-   ```
-
-3. **switch文全体を選択**
-   - `action = userInput switch` の行から `};` までを選択
-
-4. **GitHub Copilotで入力処理を追加**
-   - 選択状態で **Ctrl + I** でインラインチャットを開く
-   - 以下のプロンプトを入力：
-   ```plaintext
-   選択範囲を更新して、CommonActions.SearchBooks アクションのケースを追加してください。文字「b」を入力キーとして使用してください。
-   ```
-
-5. **生成されたコードを確認**
+4. **生成されたコードを確認**
    - switch文に以下のようなケースが追加されることを確認：
    ```csharp
-   "b" when options.HasFlag(CommonActions.SearchBooks) => CommonActions.SearchBooks,
-   ```
-
-### ステップ4: PatronDetailsメソッドを更新
-
-1. **PatronDetailsメソッドを検索**
-   - **Ctrl + F** で **「PatronDetails」** を検索
-   - **注意**: `async Task<ConsoleState> PatronDetails()` のメソッドを探してください
-
-2. **メソッドの主要部分を確認**
-   - このメソッドは利用者詳細画面を表示し、ユーザーの選択を処理します
-   - `ReadInputOptions` を呼び出している部分を特定します
-
-3. **options変数の初期化部分を選択**
-   ```csharp
-   CommonActions options = CommonActions.SearchPatrons | CommonActions.Quit | CommonActions.Select | CommonActions.RenewPatronMembership;
-   ```
-
-4. **GitHub Copilotでオプションを追加**
-   - 選択状態で **Ctrl + I** でインラインチャットを開く
-   - 以下のプロンプトを入力：
-   ```plaintext
-   選択範囲を更新して、CommonActions.SearchBooksをoptionsに追加してください。
-   ```
-
-5. **SearchBooks処理を追加**
-   - PatronDetailsメソッド内のelse if文の連続している部分を見つけます
-   - 最後のelse if文の後に新しい処理を追加します
-   - 以下のコードを手動で追加：
-   ```csharp
-   else if (action == CommonActions.SearchBooks)
-   {
-       return await SearchBooks();
-   }
+   case "7":
+       ShowLowStockAlert(productService, stockService);
+       break;
    ```
 
 ---
 
-## タスク3: SearchBooksメソッドの実装
+## タスク2: ShowLowStockAlertメソッドの実装
 
 ### ステップ1: メソッドの設計を理解
 
-SearchBooksメソッドの処理フロー：
-1. ユーザーから書籍タイトルを入力
-2. Books.jsonから一致する書籍を検索
-3. Loans.jsonで貸出状況を確認
-4. 結果メッセージを表示
-5. PatronDetailsに戻る
+ShowLowStockAlertメソッドの処理フロー：
+1. すべての商品を取得
+2. 各商品の在庫数を確認
+3. 在庫数が最小在庫数を下回っている商品を検出
+4. 低在庫商品のリストを表示
+5. 低在庫商品が見つからない場合はメッセージを表示
 
-### ステップ2: 基本的なSearchBooksメソッドを作成
+### ステップ2: 基本的なShowLowStockAlertメソッドを作成
 
-1. **ConsoleApp.csの末尾に移動**
-   - ファイルの最後の `}` の直前に新しいメソッドを追加します
+1. **Program.csの末尾に移動**
+   - ファイルの最後、`ShowReorderList`メソッドの後に新しいメソッドを追加します
 
 2. **基本的なメソッドの骨組みを作成**
    ```csharp
-   async Task<ConsoleState> SearchBooks()
+   static void ShowLowStockAlert(ProductService productService, StockService stockService)
    {
        // この部分をGitHub Copilotで実装します
-       return ConsoleState.PatronDetails;
    }
    ```
 
@@ -268,235 +174,183 @@ SearchBooksメソッドの処理フロー：
 
 2. **必要なファイルをチャットコンテキストに追加**
    以下のファイルをドラッグ&ドロップでチャットビューに追加：
-   - `ConsoleApp.cs`（現在編集中のファイル）
-   - `JsonData.cs`（Library.Infrastructure/Data/ フォルダー内）
-   - `Books.json`（Library.Console/Json/ フォルダー内）
-   - `Loans.json`（Library.Console/Json/ フォルダー内）
+   - `Program.cs`（現在編集中のファイル）
+   - `ProductService.cs`（InventoryManagement.Core/Services/ フォルダー内）
+   - `StockService.cs`（InventoryManagement.Core/Services/ フォルダー内）
+   - `Product.cs`（InventoryManagement.Entities/ フォルダー内）
+   - `Stock.cs`（InventoryManagement.Entities/ フォルダー内）
 
 3. **包括的な実装指示を送信**
    ```plaintext
-   @workspace SearchBooksメソッドを実装してください。以下の仕様で作成してください：
+   @workspace ShowLowStockAlertメソッドを実装してください。以下の仕様で作成してください：
 
-   1. ユーザーに「検索する書籍タイトルを入力してください: 」とプロンプトを表示
-   2. 書籍タイトルの入力を受け取る（空白やnullの場合は再入力を求める）
-   3. JsonDataクラスを使用してBooks.jsonから入力されたタイトルと一致する書籍を検索
-   4. 書籍が見つからない場合は「指定された書籍が見つかりません」と表示
-   5. 書籍が見つかった場合、Loans.jsonを確認して貸出状況をチェック
-   6. 貸出可能な場合：「{書籍タイトル}は貸出可能です」と表示
-   7. 貸出中の場合：「{書籍タイトル}は別の利用者に貸し出されています。返却期限は{返却期限}です」と表示
-   8. 最後にConsoleState.PatronDetailsを返す
+   1. ProductServiceを使用してすべての商品を取得
+   2. 各商品について、StockServiceを使用して現在の在庫数を取得
+   3. 在庫数が最小在庫数（MinimumStock）を下回っている商品をリストに追加
+   4. 低在庫商品が見つかった場合：
+      - 「低在庫商品が{件数}件見つかりました」と表示
+      - 各商品について「{ProductId} | {ProductName} | 現在在庫: {現在数} / 最小在庫: {最小数} - 発注推奨」の形式で表示
+   5. 低在庫商品が見つからない場合：
+      - 「低在庫の商品はありません」と表示
 
-   JsonDataクラスにSearchBookByTitleメソッドが必要な場合は、その実装も提案してください。
+   メソッドはstatic voidで、引数はProductServiceとStockServiceです。
    ```
 
 ### ステップ4: 生成されたコードの実装
 
-GitHub Copilotからの提案に基づいて、以下の更新を行ってください：
+GitHub Copilotからの提案に基づいて、以下のような実装を確認してください：
 
-1. **JsonData.csの更新**
-   - SearchBookByTitleメソッドが提案された場合は追加
+```csharp
+static void ShowLowStockAlert(ProductService productService, StockService stockService)
+{
+    Console.WriteLine("=== 低在庫アラート ===");
+    
+    var allProducts = productService.GetAllProducts();
+    var lowStockProducts = new List<(Product product, int currentStock)>();
+
+    foreach (var product in allProducts)
+    {
+        int currentStock = stockService.GetStockQuantity(product.ProductId);
+        if (currentStock < product.MinimumStock)
+        {
+            lowStockProducts.Add((product, currentStock));
+        }
+    }
+
+    if (lowStockProducts.Count > 0)
+    {
+        Console.WriteLine($"低在庫商品が{lowStockProducts.Count}件見つかりました");
+        Console.WriteLine();
+
+        foreach (var item in lowStockProducts)
+        {
+            Console.WriteLine($"{item.product.ProductId} | {item.product.ProductName} | 現在在庫: {item.currentStock} / 最小在庫: {item.product.MinimumStock} - 発注推奨");
+        }
+    }
+    else
+    {
+        Console.WriteLine("低在庫の商品はありません");
+    }
+}
+```
+
+**実装のポイント**:
+- **タプル使用**: 商品と在庫数をペアで管理
+- **foreach ループ**: すべての商品をチェック
+- **条件判定**: 現在在庫 < 最小在庫で判定
+- **分岐処理**: 低在庫商品の有無で表示を切り替え
+
+### ステップ5: コードの確認と調整
+
+1. **生成されたコードをProgram.csに追加**
+   - ShowLowStockAlertメソッドをProgram.csファイルの適切な位置に追加
+
+2. **必要なusing文の確認**
+   - ファイル上部に必要なusing文が含まれているか確認
+   - 必要に応じて以下を追加：
    ```csharp
-   public Book? SearchBookByTitle(string title)
-   {
-       return Books?.FirstOrDefault(b => b.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
-   }
+   using InventoryManagement.Core.Services;
+   using InventoryManagement.Entities;
    ```
-
-2. **ConsoleApp.csの更新**
-   - JsonDataフィールドの追加（まだ追加されていない場合）
-   - コンストラクターの更新
-   - SearchBooksメソッドの完全な実装
-
-3. **必要なusing文の追加**
-   ```csharp
-    using Library.Infrastructure.Data;
-    using Microsoft.Extensions.Configuration;
-   ```
- - **注意**: 必要に応じてusing文を追加してください
-### ステップ5: 依存関係の確認と修正
-
-1. **Program.csの確認**
-   - `src/Library.Console/Program.cs` を開く
-   - JsonDataの依存関係注入が含まれていることを確認：
-   ```csharp
-   services.AddSingleton<JsonData>();
-   ```
-
-2. **ビルドエラーの確認**
-   - **Ctrl + Shift + P** → **「Tasks: Run Build Task」** を実行
-   - または ソリューションエクスプローラーで **GuidedProjectApp** を右クリック → **「ビルド」**
-
-3. **エラーの修正**
-   - using文の不足やコンストラクターパラメーターの不一致があれば修正
-   - 警告は無視して構いませんが、エラーは必ず解決してください
 
 ---
 
-## タスク4: 機能テストの実施
+## タスク3: 機能テストの実施
 
 ### ステップ1: アプリケーションの準備
 
 1. **ソリューションをクリーン**
-   - ソリューションエクスプローラーで **GuidedProjectApp** を右クリック
+   - ソリューションエクスプローラーで **InventoryManagement.Console** を右クリック
    - **「クリーン」** を選択
    - ビルドキャッシュをクリアして確実に最新コードで実行
 
 2. **ソリューションをビルド**
-   - 再度 **GuidedProjectApp** を右クリック
+   - 再度 **InventoryManagement.Console** を右クリック
    - **「ビルド」** を選択
    - エラーがないことを確認
 
 ### ステップ2: アプリケーションの実行
 
 1. **デバッグ実行を開始**
-   - **Library.Console** プロジェクトを右クリック
+   - **InventoryManagement.Console** プロジェクトを右クリック
    - **「デバッグ」** → **「新しいインスタンスを開始」** を選択
 
 2. **実行環境の確認**
    - コンソールウィンドウが開くことを確認
-   - アプリケーションが正常に起動することを確認
+   - メニューに「7. 低在庫アラート表示」が表示されることを確認
 
 ### ステップ3: 新機能のテスト
 
-1. **基本操作フローの実行**
-   - パトロン名の入力プロンプト: **「One」** と入力（Oは大文字）
-   - **Enter** キーを押下
-   - 利用者選択: **「2」** と入力
+1. **低在庫アラート機能のテスト**
+   - メニュー選択: **「7」** と入力
    - **Enter** キーを押下
 
-2. **書籍在庫確認機能のテスト**
-   - Input Optionsで利用可能なオプションを確認
-   - **「b」** と入力（書籍検索オプション）
-   - **Enter** キーを押下
+2. **結果の確認**
+   - 低在庫商品が表示されることを確認
+   - 表示形式が正しいことを確認：
+     ```
+     === 低在庫アラート ===
+     低在庫商品が2件見つかりました
 
-3. **貸出中の書籍をテスト**
-   - 「検索する書籍タイトルを入力してください」プロンプトで **「Book One」** と入力
-   - **Enter** キーを押下
-   - 期待される結果：「Book Oneは別の利用者に貸し出されています。返却期限は[日付]です」
+     P004 | モニター | 現在在庫: 3 / 最小在庫: 8 - 発注推奨
+     P006 | プリンター | 現在在庫: 5 / 最小在庫: 3 - 発注推奨
+     ```
 
-4. **利用可能な書籍をテスト**
-   - 再度 **「b」** を入力
-   - **Enter** キーを押下
-   - 書籍タイトル: **「Book Nine」** と入力
-   - **Enter** キーを押下
-   - 期待される結果：「Book Nineは貸出可能です」
+3. **在庫を増やしてテスト**
+   - メニューから **「4」** を選択（入庫処理）
+   - 商品ID: **「P004」** と入力
+   - 数量: **「10」** と入力
+   - 保管場所: **「倉庫A」** と入力
+   - 備考: **「補充」** と入力
 
-5. **存在しない書籍をテスト**
-   - 再度 **「b」** を入力
-   - 書籍タイトル: **「Non-Existent Book」** と入力
-   - 期待される結果：「指定された書籍が見つかりません」
+4. **再度低在庫アラートを確認**
+   - メニューから **「7」** を選択
+   - P004が低在庫リストから消えていることを確認
 
-6. **アプリケーション終了**
-   - **「q」** を入力してアプリケーションを終了
+5. **アプリケーション終了**
+   - **「0」** を入力してアプリケーションを終了
 
 **重要な注意点**:
-- JSONデータファイルの場所により、更新内容の反映場所が異なります
-- デバッガー実行: `Library.Console\bin\Debug\net8.0\Json\`
-- dotnet run実行: `Library.Console\Json\`
+- CSVデータファイルの場所により、更新内容の反映場所が異なります
+- デバッガー実行: `InventoryManagement.Console\bin\Debug\net8.0\Data\`
+- dotnet run実行: `InventoryManagement.Console\Data\`
 
 ---
 
-## 演習6: 変更をメインブランチにマージする
+## 演習5まとめ
 
-### タスク1: 変更のコミットとプッシュ
+### 達成した内容
 
-1. **ソース管理ビューを開く**
-   - 左サイドバーの**ソース管理アイコン**をクリック
+1. **メニュー拡張**
+   - Program.csのShowMenuメソッドに新しいメニュー項目を追加
+   - Mainメソッドのswitch文に新しいケースを追加
 
-2. **変更ファイルの確認**
-   - 「変更」セクションに以下のファイルが表示されることを確認：
-     - `CommonActions.cs`
-     - `ConsoleApp.cs`
-     - その他更新されたファイル
+2. **低在庫アラート機能の実装**
+   - ShowLowStockAlertメソッドの完全な実装
+   - 商品サービスと在庫サービスの連携
+   - 低在庫商品の検出とフォーマット表示
 
-3. **AIコミットメッセージの生成**
-   - コミットメッセージボックス右側の**スパークルアイコン**（AI生成アイコン）をクリック
-   - GitHub Copilotが以下のようなコミットメッセージを生成します：
-     ```
-     書籍在庫確認機能を追加：SearchBooksアクションとメソッドを実装
-     ```
+3. **機能テストの完了**
+   - 低在庫商品の正常な検出
+   - 表示フォーマットの確認
+   - データ更新後の動作確認
 
-4. **変更をステージングしてコミット**
-   - **「変更をステージ」** ボタンをクリック（すべての変更をステージング）
-   - または個別ファイルの **「+」** アイコンをクリック
-   - **「コミット」** ボタンをクリック
+### 学習ポイント
 
-5. **リモートリポジトリに同期**
-   - **「同期」** または **「プッシュ」** ボタンをクリック
-   - GitHub認証が求められた場合は承認してください
+**GitHub Copilotの効果的活用**:
+- メソッド実装の高速化
+- 適切なロジックの提案
+- コードの一貫性維持
 
-### タスク2: プルリクエストの作成
+**コーディングのベストプラクティス**:
+- サービス層の適切な利用
+- データ構造の効率的な管理
+- ユーザーフレンドリーな出力
 
-1. **GitHubリポジトリを開く**
-   - ブラウザーでGitHubアカウントにアクセス
-   - AccelerateDevGitHubCopilotリポジトリを開く
-   - 必要に応じてページを更新してください
-
-2. **プルリクエストの通知を確認**
-   - リポジトリページ上部に黄色の通知バーが表示される場合があります
-   - **「Compare & pull request」** ボタンが表示されていればクリック
-
-3. **手動でプルリクエストを作成（通知がない場合）**
-   - **「Pull requests」** タブをクリック
-   - **「New pull request」** ボタンをクリック
-
-4. **ブランチの設定を確認**
-   - **base**: `main` ブランチ（マージ先）
-   - **compare**: `book-availability` ブランチ（マージ元）
-   - 正しく設定されていることを確認
-
-5. **プルリクエストの詳細入力**
-   - タイトル: **「書籍在庫確認機能の追加」**
-   - 説明欄に以下を入力：
-     ```
-     ## 変更内容
-     - SearchBooksアクションをCommonActionsに追加
-     - ConsoleAppにSearchBooksメソッドを実装
-     - ユーザーが書籍タイトルで在庫状況を確認できる機能
-
-     ## テスト結果
-     - 貸出中書籍の確認：正常動作
-     - 利用可能書籍の確認：正常動作
-     - 存在しない書籍の処理：正常動作
-     ```
-
-6. **プルリクエストの作成**
-   - **「Create pull request」** ボタンをクリック
-
-### タスク3: マージの実行
-
-1. **チェックの完了を待機**
-   - GitHubが自動的に実行するチェック（あれば）が完了するまで待機
-   - すべてのチェックが緑色（成功）になることを確認
-
-2. **プルリクエストの確認**
-   - 変更されたファイルの内容を確認
-   - **「Files changed」** タブで差分を確認
-
-3. **プルリクエストのマージ**
-   - **「Conversation」** タブで **「Merge pull request」** ボタンをクリック
-   - マージ方法は **「Create a merge commit」** を選択（デフォルト）
-   - **「Confirm merge」** ボタンをクリック
-
-4. **ブランチの削除（推奨）**
-   - マージ完了後、**「Delete branch」** ボタンが表示されます
-   - **「Delete branch」** をクリックしてfeatureブランチを削除
-
-### タスク4: ローカルでの更新
-
-1. **Visual Studio Codeに戻る**
-
-2. **mainブランチに切り替え**
-   - 左下の **「book-availability」** をクリック
-   - **「main」** ブランチを選択
-
-3. **最新の変更を取得**
-   - ソース管理ビューで **「プル」** ボタンをクリック
-   - リモートの最新変更をローカルに取得
-
-4. **完了確認**
-   - mainブランチに新機能が正しくマージされていることを確認
-   - 必要に応じてアプリケーションを再度実行してテスト
+**在庫管理システムの機能拡張**:
+- 既存機能との統合
+- ビジネスロジックの実装
+- エラーハンドリングの考慮
 
 ---
 
@@ -504,34 +358,50 @@ GitHub Copilotからの提案に基づいて、以下の更新を行ってくだ
 
 ### Q: ビルドエラーが発生する
 **A**: 以下の点を確認してください
-- using文の追加：`using Library.Infrastructure.Data;`
+- using文の追加：`using InventoryManagement.Core.Services;`、`using InventoryManagement.Entities;`
 - プロジェクト参照の確認
-- JsonDataの依存関係注入がProgram.csに含まれているか
+- ProductServiceとStockServiceの依存関係注入がProgram.csに含まれているか
 
-### Q: GitHub認証エラーが発生する
-**A**: 以下の手順で解決してください
-1. Visual Studio Codeを再起動
-2. GitHub Copilot拡張機能を無効化→有効化
-3. GitHubアカウントで再認証
-
-### Q: 書籍在庫確認が正しく動作しない
+### Q: 低在庫アラートが正しく動作しない
 **A**: 以下を確認してください
-- JSONファイルの読み込み場所とデータの整合性
-- 書籍タイトルの大文字小文字一致（StringComparison.OrdinalIgnoreCaseの使用）
-- 貸出データの返却日（ReturnDate）がnullかどうかの判定
+- CSVファイルの読み込み場所とデータの整合性
+- 商品の最小在庫数（MinimumStock）の設定値
+- StockServiceのGetStockQuantityメソッドが正しく動作しているか
 
-### Q: 「SearchBooks」オプションが表示されない
+### Q: 低在庫商品が表示されない
 **A**: 以下を確認してください
-- CommonActionsにSearchBooksが正しく追加されているか
-- WriteInputOptionsメソッドにSearchBooksの表示処理が追加されているか
-- PatronDetailsメソッドでoptionsにSearchBooksが含まれているか
+- Products.csvの最小在庫数の設定
+- Stocks.csvの現在在庫数
+- 条件判定ロジック（currentStock < product.MinimumStock）が正しいか
 
-### Q: プルリクエストでマージできない
+### Q: メニューに「7. 低在庫アラート表示」が表示されない
 **A**: 以下を確認してください
-- ブランチの設定が正しいか（base: main, compare: book-availability）
-- マージコンフリクトが発生していないか
-- 必要な権限があるか
+- ShowMenuメソッドが正しく更新されているか
+- ファイルが保存されているか
+- ビルドが成功しているか
 
 ---
 
-**次のステップ**: パート3では、作成した機能の単体テストを開発します。品質保証の観点から重要な作業となります。
+## 次のステップ
+
+このラボでは、在庫管理システムに低在庫アラート機能を追加しました。次のラボでは、作成した機能の単体テストを開発し、品質保証の観点から重要な作業を学習します。
+
+---
+
+## 応用課題（オプション）
+
+より高度な学習を希望する場合は、以下の拡張機能にチャレンジしてください：
+
+1. **優先度表示**
+   - 在庫不足の深刻度（最小在庫数との差）に応じて優先度を表示
+
+2. **カテゴリーフィルター**
+   - 特定のカテゴリーのみの低在庫商品を表示
+
+3. **自動発注提案**
+   - 低在庫商品に対して推奨発注数を自動計算して表示
+
+4. **CSV出力**
+   - 低在庫商品リストをCSVファイルとして出力
+
+これらの機能を実装することで、GitHub Copilotの活用スキルをさらに向上させることができます。

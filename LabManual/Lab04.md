@@ -2,7 +2,7 @@
 
 ## 概要
 
-このラボでは、GitHub Copilotを活用して既存コードのリファクタリングを実施します。リファクタリングとは、外部の動作を変更することなく内部構造を改善するプロセスです。コードの品質、保守性、パフォーマンス、セキュリティを向上させる実践的な手法を学習します。
+このラボでは、GitHub Copilotを活用して既存コードのリファクタリングを実施します。リファクタリングとは、外部の動作を変更することなく内部構造を改善するプロセスです。コードの品質、保守性、可読性を向上させ、さらにドキュメンテーションを追加することで、チーム開発に適したコードベースを構築する実践的な手法を学習します。
 
 ---
 
@@ -10,316 +10,31 @@
 
 ### プロジェクトの現状
 
-あなたと同僚は、図書館管理システムの初期開発フェーズを完了し、コードベースの品質向上に取り組んでいます。現在のコードには以下の改善点があります：
+あなたは在庫管理システムの初期開発フェーズを完了し、コードベースの品質向上とドキュメント化に取り組んでいます。現在のコードには以下の改善点があります：
 
 **改善対象**:
-1. **EnumHelperクラス**: リフレクションを使用した列挙値の説明取得（パフォーマンス・セキュリティ課題）
+1. **各サービスクラス**: foreach ループを多用した実装（可読性・保守性の課題）
 2. **データアクセスクラス**: foreach ループを多用した実装（可読性・保守性の課題）
+3. **ドキュメント不足**: XMLドキュメンテーションコメントがなく、使い方が不明確
 
 **改善手法**:
-- **リフレクション → ディクショナリ**: パフォーマンス向上とセキュリティ強化
 - **foreach ループ → LINQ**: コードの簡潔性と可読性向上
+- **XMLドキュメンテーション追加**: メソッドの使い方を明確化、IntelliSense対応
 
 ### 学習目標
 
 1. **リファクタリングの基本原則理解**
 2. **GitHub Copilotを活用した効率的なコード改善**
-3. **パフォーマンス最適化手法の実践**
-4. **LINQ（統合言語クエリ）の効果的活用**
+3. **LINQ（統合言語クエリ）の効果的活用**
+4. **XMLドキュメンテーションコメントの作成**
+5. **チーム開発に適したコードベース構築**
 
 ---
 
-## 演習8: EnumHelper クラスのリファクタリング
+## 演習8: 基本的なLINQ変換を学ぶ
 
 ### 目標
-リフレクションベースの実装をディクショナリベースに変更し、パフォーマンスとセキュリティを向上させます。
-
-### 問題の理解
-
-#### 現在の実装（リフレクション使用）
-
-**課題**:
-- **パフォーマンス**: 実行時のメタデータ検索によるオーバーヘッド
-- **セキュリティ**: リフレクションによる潜在的なセキュリティリスク
-- **保守性**: 複雑なリフレクションコードの理解困難
-
-**改善効果**:
-- **高速化**: コンパイル時にディクショナリ構築
-- **安全性**: リフレクション排除によるセキュリティ向上
-- **明確性**: 静的なマッピングによる理解容易化
-
----
-
-### タスク1: 現在のEnumHelperクラスの分析
-
-#### ステップ1: 対象ファイルを開く
-
-1. **Visual Studio Codeを起動**
-   - AccelerateDevGitHubCopilotプロジェクトが開かれていることを確認
-
-2. **ソリューションエクスプローラービューを開く**
-   - 左サイドバーの**ソリューションエクスプローラーアイコン**をクリック
-   - **重要**: 「エクスプローラー」ではなく「ソリューション エクスプローラー」を使用
-
-3. **EnumHelper.csファイルを開く**
-   - 以下の階層を辿ります：
-     ```
-     AccelerateDevGitHubCopilot
-     └── src
-         └── Library.ApplicationCore
-             └── Enums
-                 └── EnumHelper.cs
-     ```
-
-#### ステップ2: 現在の実装を確認
-
-```csharp
-using System.ComponentModel;
-using System.Reflection;
-
-namespace Library.ApplicationCore.Enums;
-
-public static class EnumHelper
-{
-    public static string GetDescription(Enum value)
-    {
-        if (value == null)
-            return string.Empty;
-
-        FieldInfo fieldInfo = value.GetType().GetField(value.ToString())!;
-        DescriptionAttribute[] attributes =
-            (DescriptionAttribute[])fieldInfo.GetCustomAttributes(typeof(DescriptionAttribute), false);
-
-        if (attributes != null && attributes.Length > 0)
-        {
-            return attributes[0].Description;
-        }
-        else
-        {
-            return value.ToString();
-        }
-    }
-}
-```
-
-**現在の処理フロー**:
-1. 列挙値の型情報を実行時に取得
-2. リフレクションでフィールド情報を検索
-3. Description属性を動的に取得
-4. 属性値を返却
-
----
-
-### タスク2: 関連する列挙型ファイルの確認
-
-#### ステップ1: 必要なファイルをチャットコンテキストに追加
-
-1. **チャットビューを開く**
-   - **Ctrl + Alt + I** キーを押下
-
-2. **関連ファイルをドラッグ&ドロップで追加**
-   以下のファイルを順番にチャットビューに追加：
-   - `EnumHelper.cs`（現在開いているファイル）
-   - `LoanExtensionStatus.cs`（Enumsフォルダー内）
-   - `LoanReturnStatus.cs`（Enumsフォルダー内）
-   - `MembershipRenewalStatus.cs`（Enumsフォルダー内）
-
-#### ステップ2: 列挙型の内容確認
-
-**LoanExtensionStatus.cs の例**:
-```csharp
-public enum LoanExtensionStatus
-{
-    [Description("Book loan extension was successful.")]
-    Success,
-
-    [Description("Loan not found.")]
-    LoanNotFound,
-
-    [Description("Cannot extend book loan as it already has expired. Return the book instead.")]
-    LoanExpired,
-
-    // 他の値も同様にDescription属性付き
-}
-```
-
----
-
-### タスク3: ディクショナリベース実装の設計
-
-#### ステップ1: リファクタリング指示を送信
-
-```plaintext
-@workspace EnumHelperクラスをリフレクションではなくディクショナリを使用してリファクタリングしてください。以下の要件で実装してください：
-
-1. 各列挙型（LoanExtensionStatus、LoanReturnStatus、MembershipRenewalStatus）に対して個別のディクショナリを作成
-2. ディクショナリには列挙値をキー、Description属性の値をバリューとして設定
-3. GetDescriptionメソッドはパターンマッチングを使用して適切なディクショナリから値を取得
-4. リフレクションを完全に排除した実装
-
-更新されたコード全体を提示してください。
-```
-
-#### ステップ2: 生成されたコードを確認
-
-GitHub Copilotから以下のような実装が提案されることを確認：
-
-```csharp
-using System.ComponentModel;
-using System.Collections.Generic;
-
-namespace Library.ApplicationCore.Enums
-{
-    public static class EnumHelper
-    {
-        private static readonly Dictionary<MembershipRenewalStatus, string> MembershipRenewalStatusDescriptions = new()
-        {
-            { MembershipRenewalStatus.Success, "Membership renewal was successful." },
-            { MembershipRenewalStatus.PatronNotFound, "Patron not found." },
-            { MembershipRenewalStatus.TooEarlyToRenew, "It is too early to renew the membership." },
-            { MembershipRenewalStatus.LoanNotReturned, "Cannot renew membership due to an outstanding loan." },
-            { MembershipRenewalStatus.Error, "Cannot renew membership due to an error." }
-        };
-
-        private static readonly Dictionary<LoanReturnStatus, string> LoanReturnStatusDescriptions = new()
-        {
-            { LoanReturnStatus.Success, "Book was successfully returned." },
-            { LoanReturnStatus.LoanNotFound, "Loan not found." },
-            { LoanReturnStatus.AlreadyReturned, "Cannot return book as the book is already returned." },
-            { LoanReturnStatus.Error, "Cannot return book due to an error." }
-        };
-
-        private static readonly Dictionary<LoanExtensionStatus, string> LoanExtensionStatusDescriptions = new()
-        {
-            { LoanExtensionStatus.Success, "Book loan extension was successful." },
-            { LoanExtensionStatus.LoanNotFound, "Loan not found." },
-            { LoanExtensionStatus.LoanExpired, "Cannot extend book loan as it already has expired. Return the book instead." },
-            { LoanExtensionStatus.MembershipExpired, "Cannot extend book loan due to expired patron's membership." },
-            { LoanExtensionStatus.LoanReturned, "Cannot extend book loan as the book is already returned." },
-            { LoanExtensionStatus.Error, "Cannot extend book loan due to an error." }
-        };
-
-        public static string GetDescription(Enum value)
-        {
-            if (value == null)
-                return string.Empty;
-
-            return value switch
-            {
-                MembershipRenewalStatus status => MembershipRenewalStatusDescriptions[status],
-                LoanReturnStatus status => LoanReturnStatusDescriptions[status],
-                LoanExtensionStatus status => LoanExtensionStatusDescriptions[status],
-                _ => value.ToString()
-            };
-        }
-    }
-}
-```
-
-#### ステップ3: Description属性値の整合性確認
-
-1. **個別検証の実施**
-   各列挙型ファイルを開いて、ディクショナリの値が正確であることを確認
-
-2. **不整合があった場合の修正**
-   ```plaintext
-   @workspace LoanExtensionStatus.csファイルのDescription値を使用して、EnumHelperクラスのLoanExtensionStatusディクショナリを更新してください。正確な文字列値を提供してください。
-   ```
-
-3. **必要に応じて他の列挙型も同様に修正**
-
----
-
-### タスク4: 改善されたGetDescriptionメソッドの理解
-
-#### ステップ1: パターンマッチングの動作確認
-
-**新しい実装の利点**:
-```csharp
-public static string GetDescription(Enum value)
-{
-    if (value == null)
-        return string.Empty;
-
-    return value switch
-    {
-        MembershipRenewalStatus status => MembershipRenewalStatusDescriptions[status],
-        LoanReturnStatus status => LoanReturnStatusDescriptions[status],
-        LoanExtensionStatus status => LoanExtensionStatusDescriptions[status],
-        _ => value.ToString()
-    };
-}
-```
-
-**処理フロー**:
-1. **型判定**: switch文で列挙値の型を判定
-2. **直接参照**: 該当ディクショナリから値を直接取得
-3. **フォールバック**: 未知の型の場合はToString()を返却
-
-#### ステップ2: 代替実装パターンの検討
-
-GitHub Copilotに以下のような改善を依頼することも可能：
-
-```plaintext
-@workspace GetDescriptionメソッドをswitch式ではなく従来のswitch文を使用してリファクタリングしてください。可読性を向上させる目的です。
-```
-
-**従来のswitch文での実装例**:
-```csharp
-public static string GetDescription(Enum value)
-{
-    if (value == null)
-        return string.Empty;
-
-    switch (value)
-    {
-        case MembershipRenewalStatus status:
-            return MembershipRenewalStatusDescriptions[status];
-        case LoanReturnStatus status:
-            return LoanReturnStatusDescriptions[status];
-        case LoanExtensionStatus status:
-            return LoanExtensionStatusDescriptions[status];
-        default:
-            return value.ToString();
-    }
-}
-```
-
----
-
-### タスク5: 実装の適用と検証
-
-#### ステップ1: EnumHelper.csファイルの更新
-
-1. **生成されたコードを適用**
-   - GitHub Copilotが提案したコード全体をコピー
-   - EnumHelper.csファイルの内容を完全に置き換え
-
-2. **using文の確認**
-   - `System.Collections.Generic` が追加されていることを確認
-   - 不要な `System.Reflection` を削除
-
-#### ステップ2: ビルドとエラーチェック
-
-1. **ソリューションのビルド**
-   - ソリューションエクスプローラーで **GuidedProjectApp** を右クリック
-   - **「ビルド」** を選択
-
-2. **エラーの確認**
-   - コンパイルエラーがないことを確認
-   - 警告は現時点では無視して構いません
-
-#### ステップ3: 変更の保存
-
-1. **ファイルを保存**
-   - **Ctrl + S** でEnumHelper.csファイルを保存
-
----
-
-## 演習9: LINQを使用したデータアクセスクラスの改善
-
-### 目標
-foreach ループをLINQ（統合言語クエリ）に置き換えて、コードの可読性、保守性、パフォーマンスを向上させます。
+ProductServiceクラスのforeachループをLINQに置き換えて、LINQ文法の基礎を習得します。
 
 ### LINQの利点理解
 
@@ -336,710 +51,1256 @@ foreach ループをLINQ（統合言語クエリ）に置き換えて、コー�
 
 ---
 
-### タスク1: JsonData.csのメソッドリファクタリング
+### タスク1: ProductService.csのメソッドリファクタリング
 
 #### ステップ1: 対象ファイルを開く
 
-1. **JsonData.csファイルを開く**
+1. **Visual Studio Codeの準備**
+   - InventoryManagementAppプロジェクトが開かれていることを確認
+
+2. **ProductService.csファイルを開く**
    - 以下の階層を辿ります：
      ```
-     AccelerateDevGitHubCopilot
+     InventoryManagementApp
      └── src
-         └── Library.Infrastructure
-             └── Data
-                 └── JsonData.cs
+         └── InventoryManagement.Core
+             └── Services
+                 └── ProductService.cs
      ```
 
-#### ステップ2: GetPopulatedPatronメソッドの分析
+#### ステップ2: GetProductByIdメソッドの分析
 
 **現在の実装**:
 ```csharp
-public Patron GetPopulatedPatron(Patron p)
+public Product GetProductById(string productId)
 {
-    Patron populated = new Patron
-    {
-        Id = p.Id,
-        Name = p.Name,
-        ImageName = p.ImageName,
-        MembershipStart = p.MembershipStart,
-        MembershipEnd = p.MembershipEnd,
-        Loans = new List<Loan>()
-    };
+   List<Product> products = _productData.GetAll();
 
-    foreach (Loan loan in Loans!)
-    {
-        if (loan.PatronId == p.Id)
-        {
-            populated.Loans.Add(GetPopulatedLoan(loan));
-        }
-    }
-    return populated;
+   foreach (var product in products)
+   {
+         if (product.ProductId == productId)
+         {
+            return product;
+         }
+   }
+
+   return null;
 }
 ```
 
 **問題点**:
-- 一時的なオブジェクト作成
 - 明示的なループ処理
-- 条件判定とリスト追加の手動実装
+- インデックスベースのアクセス
+- 条件判定とリターンの手動実装
 
 #### ステップ3: LINQによるリファクタリング
 
-1. **GetPopulatedPatronメソッド全体を選択**
+1. **GetProductByIdメソッド全体を選択**
 
 2. **インラインチャットを開く**
    - **Ctrl + I** キーを押下
 
 3. **LINQ変換の指示**
    ```plaintext
-   選択範囲をリファクタリングして、`return new Patron` パターンでLINQを使用してください。
+   選択範囲をLINQでリファクタリングしてください。FirstOrDefaultメソッドを使用してください。
    ```
+   - **Enter** キーを押下
 
 4. **生成された改善コードを確認**
    ```csharp
-   public Patron GetPopulatedPatron(Patron p)
+   public Product GetProductById(string productId)
    {
-       return new Patron
-       {
-           Id = p.Id,
-           Name = p.Name,
-           ImageName = p.ImageName,
-           MembershipStart = p.MembershipStart,
-           MembershipEnd = p.MembershipEnd,
-           Loans = Loans!
-               .Where(loan => loan.PatronId == p.Id)
-               .Select(GetPopulatedLoan)
-               .ToList()
-       };
+       List<Product> products = _productData.GetAll();
+       return products.FirstOrDefault(p => p.ProductId == productId);
    }
    ```
+
+5. **変更を承諾**
+   - 内容が正しければ **「承諾」** をクリック
 
 **改善ポイント**:
-- **Where**: 条件に一致する要素をフィルタリング
-- **Select**: 各要素をGetPopulatedLoanで変換
-- **ToList**: 結果をList<Loan>に変換
-- **オブジェクト初期化子**: 一度にプロパティ設定
+- **FirstOrDefault**: 条件に一致する最初の要素を取得（なければnull）
+- **ラムダ式**: 条件を簡潔に記述（`p => p.ProductId == productId`）
+- **コード行数**: 9行から2行に削減
 
-#### ステップ4: 他のメソッドの順次リファクタリング
+#### ステップ4: SearchByNameメソッドのリファクタリング
 
-1. **GetPopulatedLoanメソッドのリファクタリング**
+**現在の実装**:
+```csharp
+public List<Product> SearchByName(string keyword)
+{
+   List<Product> result = new List<Product>();
+   List<Product> all = _productData.GetAll();
+
+   foreach (var product in allProducts)
+   {
+         if (product.ProductName != null && product.ProductName.Contains(keyword))
+         {
+            result.Add(product);
+         }
+   }
+
+   return result;
+}
+```
+
+1. **SearchByNameメソッド全体を選択**
+
+2. **インラインチャットを開く**
+   - **Ctrl + I** キーを押下
+
+3. **LINQによるリファクタリング**
    ```plaintext
-   選択範囲をリファクタリングして、`return new Loan` パターンでLINQを使用してください。BookItemプロパティには`GetPopulatedBookItem`を、PatronプロパティにはSingleメソッドを使用してください。
+   選択範囲をLINQでリファクタリングしてください。Whereメソッドを使用して条件に一致する商品をフィルタリングし、ToListで返してください。
    ```
 
-   **期待される結果**:
+4. **期待される結果を確認**:
    ```csharp
-   public Loan GetPopulatedLoan(Loan l)
+   public List<Product> SearchByName(string keyword)
    {
-       return new Loan
-       {
-           Id = l.Id,
-           BookItemId = l.BookItemId,
-           PatronId = l.PatronId,
-           LoanDate = l.LoanDate,
-           DueDate = l.DueDate,
-           ReturnDate = l.ReturnDate,
-           BookItem = GetPopulatedBookItem(BookItems!.Single(bi => bi.Id == l.BookItemId)),
-           Patron = Patrons!.Single(p => p.Id == l.PatronId)
-       };
+       List<Product> all = _productData.GetAll();
+       return all.Where(p => p.ProductName != null && p.ProductName.Contains(keyword)).ToList();
    }
    ```
 
-2. **GetPopulatedBookItemメソッドのリファクタリング**
-   ```plaintext
-   選択範囲をリファクタリングして、`return new BookItem` パターンでLINQを使用してください。`GetPopulatedBook`とSingleメソッドを使用してください。
-   ```
+5. **変更を承諾**
 
-3. **GetPopulatedBookメソッドのリファクタリング**
-   ```plaintext
-   選択範囲をリファクタリングして、`return new Book` パターンでLINQを使用してください。AuthorプロパティにはWhereとSelectとFirstメソッドを使用してください。
-   ```
+**改善ポイント**:
+- **Where**: 条件に一致するすべての要素をフィルタリング
+- **ToList**: フィルタリング結果をリストに変換
+- **可読性**: 「商品名にキーワードを含む商品を取得する」という意図が明確
 
-   **期待される結果**:
-   ```csharp
-   public Book GetPopulatedBook(Book b)
+#### ステップ5: GetByCategoryメソッドのリファクタリング
+
+**現在の実装**:
+```csharp
+public List<Product> GetByCategory(string category)
+{
+   List<Product> result = new List<Product>();
+   List<Product> all = _productData.GetAll();
+
+   foreach (var product in all)
    {
-       return new Book
-       {
-           Id = b.Id,
-           Title = b.Title,
-           AuthorId = b.AuthorId,
-           Genre = b.Genre,
-           ISBN = b.ISBN,
-           ImageName = b.ImageName,
-           Author = Authors!.Where(a => a.Id == b.AuthorId).Select(a => new Author {
-               Id = a.Id,
-               Name = a.Name
-           }).First()
-       };
+
+         if (product.Category != null && product.Category == category)
+         {
+            result.Add(product);
+         }
+   }
+
+   return result;
+}
+```
+
+1. **GetByCategoryメソッド全体を選択**
+
+2. **インラインチャットを開く**
+   - **Ctrl + I** キーを押下
+
+3. **LINQによるリファクタリング**
+   ```plaintext
+   選択範囲をLINQでリファクタリングしてください。Whereメソッドを使用してください。
+   ```
+
+4. **期待される結果を確認**:
+   ```csharp
+   public List<Product> GetByCategory(string category)
+   {
+       List<Product> all = _productData.GetAll();
+       return all.Where(p => p.Category != null && p.Category == category).ToList();
    }
    ```
 
-#### ステップ5: LINQクエリの理解
+5. **変更を承諾**
 
-1. **主要なLINQメソッドの理解**
+#### ステップ6: LINQクエリの理解
 
-   **Where**:
+ここで使用した主要なLINQメソッドを確認しましょう：
+
+1. **FirstOrDefault**:
    ```csharp
-   Loans!.Where(loan => loan.PatronId == p.Id)
-   // 指定条件に一致する要素のみを抽出
+   products.FirstOrDefault(p => p.ProductId == productId)
+   // 条件に一致する最初の要素を取得（なければnull）
    ```
 
-   **Select**:
+2. **Where**:
    ```csharp
-   .Select(GetPopulatedLoan)
-   // 各要素を指定メソッドで変換
+   products.Where(p => p.Category == category)
+   // 条件に一致するすべての要素をフィルタリング
    ```
 
-   **Single**:
+3. **ToList**:
    ```csharp
-   BookItems!.Single(bi => bi.Id == l.BookItemId)
-   // 条件に一致する唯一の要素を取得（複数または0個の場合は例外）
+   .ToList()
+   // IEnumerable<T>をList<T>に変換
    ```
 
-   **First**:
-   ```csharp
-   .First()
-   // 最初の要素を取得（要素がない場合は例外）
-   ```
-
-2. **Explainスマートアクションの活用**
-   - 複雑なLINQクエリを選択
-   - **Explain** スマートアクションをクリック
-   - GitHub Copilotによる詳細な動作説明を確認
-
-#### ステップ6: 変更の保存と確認
+#### ステップ7: 変更の保存と確認
 
 1. **ファイルを保存**
-   - **Ctrl + S** でJsonData.csファイルを保存
+   - **Ctrl + S** でProductService.csファイルを保存
 
 2. **ビルドエラーの確認**
-   - ソリューションをビルドしてエラーがないことを確認
+   - ソリューションエクスプローラーで **InventoryManagement.Console** を右クリック
+   - **「ビルド」** を選択
+   - エラーがないことを確認
 
 ---
 
-### タスク2: JsonLoanRepositoryクラスのリファクタリング
+## 演習9: 効率的な一括リファクタリングとドキュメント化
+
+### 目標
+データアクセス層のクラス全体を効率的にリファクタリングし、さらにXMLドキュメンテーションコメントを追加して、チーム開発に適したコードベースを構築します。
+
+### XMLドキュメンテーションとは
+
+**XMLドキュメンテーションコメント**:
+- C#のメソッド、クラス、プロパティに対する構造化されたコメント
+- `///` で始まる特殊なコメント形式
+- Visual StudioのIntelliSenseで表示される
+- API仕様書の自動生成にも利用可能
+
+**主要なタグ**:
+- `<summary>`: メソッドや型の概要
+- `<param>`: パラメータの説明
+- `<returns>`: 戻り値の説明
+- `<example>`: 使用例
+- `<remarks>`: 詳細な説明
+
+---
+
+### タスク1: ProductDataクラスの一括リファクタリングとドキュメント化
+
+#### ステップ1: チャットビューの準備
+
+1. **チャットビューを開く**
+   - **Ctrl + Alt + I** キーでチャットビューを開く
+   - 既存のチャット履歴をクリアして新しい会話を開始
+
+2. **対象ファイルを開く**
+   - `src/InventoryManagement.Data/ProductData.cs` を開く
+
+#### ステップ2: クラス全体のLINQ変換
+
+1. **ProductData.csファイル全体を選択**
+   - **Ctrl + A** でファイル全体を選択
+   - または、クラス定義全体（`public class ProductData`から最後の`}`まで）をドラッグして選択
+
+2. **チャットビューでLINQ変換を依頼**
+   ```plaintext
+   @workspace 選択範囲のすべてのforループとforeachループをLINQに変換してください。以下のLINQメソッドを適切に使用してください：
+   - FirstOrDefault: 最初の要素を取得
+   - Where: 条件フィルタリング
+   - Any: 存在確認
+   - FindIndex: インデックス取得
+   - RemoveAll: 条件削除
+   コードの動作は変更しないでください。
+   ```
+
+3. **生成されたコードを確認**
+   - GitHub Copilotが提案するリファクタリング後のコード全体を確認
+   - 主要なメソッドが以下のように変更されていることを確認：
+
+   **GetProductById**:
+   ```csharp
+   public Product GetProductById(string productId)
+   {
+       List<Product> products = GetAll();
+       return products.FirstOrDefault(p => p.ProductId == productId);
+   }
+   ```
+
+   **SearchByName**:
+   ```csharp
+   public List<Product> SearchByName(string keyword)
+   {
+       List<Product> allProducts = GetAll();
+       return allProducts
+           .Where(p => !string.IsNullOrEmpty(p.ProductName) &&
+                      !string.IsNullOrEmpty(keyword) &&
+                      p.ProductName.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+           .ToList();
+   }
+   ```
+
+   **AddProduct**:
+   ```csharp
+   public bool AddProduct(Product product)
+   {
+       List<Product> products = GetAll();
+
+       if (products.Any(p => p.ProductId == product.ProductId))
+       {
+           Console.WriteLine("商品IDが既に存在します: " + product.ProductId);
+           return false;
+       }
+
+       products.Add(product);
+       return Save(products);
+   }
+   ```
+
+   **UpdateProduct**:
+   ```csharp
+   public bool UpdateProduct(Product product)
+   {
+       List<Product> products = GetAll();
+       int index = products.FindIndex(p => p.ProductId == product.ProductId);
+
+       if (index == -1)
+       {
+           Console.WriteLine("商品IDが見つかりません: " + product.ProductId);
+           return false;
+       }
+
+       products[index] = product;
+       return Save(products);
+   }
+   ```
+
+   **DeleteProduct**:
+   ```csharp
+   public bool DeleteProduct(string productId)
+   {
+       List<Product> products = GetAll();
+       int removed = products.RemoveAll(p => p.ProductId == productId);
+
+       if (removed == 0)
+       {
+           Console.WriteLine("商品IDが見つかりません: " + productId);
+           return false;
+       }
+
+       return Save(products);
+   }
+   ```
+
+4. **変更を適用**
+   - 生成されたコードをProductData.csに適用
+
+#### ステップ3: XMLドキュメンテーションコメントの追加
+
+1. **リファクタリング後のProductData.csファイル全体を選択**
+   - **Ctrl + A** でファイル全体を選択
+
+2. **チャットビューでドキュメント追加を依頼**
+   ```plaintext
+   @workspace 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。以下を含めてください：
+   - メソッドの概要（<summary>タグ）
+   - 各パラメータの説明（<param>タグ）
+   - 戻り値の説明（<returns>タグ）
+   - 簡単な使用例（<example>タグ）
+   日本語で記述してください。
+   ```
+
+3. **生成されたドキュメンテーションを確認**
+   
+   以下のようなドキュメンテーションコメントが追加されることを確認：
+
+   ```csharp
+   /// <summary>
+   /// 指定された商品IDに一致する商品を取得します
+   /// </summary>
+   /// <param name="productId">検索する商品のID</param>
+   /// <returns>
+   /// 一致する商品が見つかった場合はその商品オブジェクト、
+   /// 見つからない場合はnullを返します
+   /// </returns>
+   /// <example>
+   /// <code>
+   /// var product = productData.GetProductById("P001");
+   /// if (product != null)
+   /// {
+   ///     Console.WriteLine($"商品名: {product.ProductName}");
+   /// }
+   /// </code>
+   /// </example>
+   public Product GetProductById(string productId)
+   {
+       List<Product> products = GetAll();
+       return products.FirstOrDefault(p => p.ProductId == productId);
+   }
+   ```
+
+   ```csharp
+   /// <summary>
+   /// 商品名にキーワードを含む商品を検索します
+   /// </summary>
+   /// <param name="keyword">検索キーワード（大文字小文字を区別しません）</param>
+   /// <returns>
+   /// キーワードに一致する商品のリスト。
+   /// 一致する商品がない場合は空のリストを返します
+   /// </returns>
+   /// <example>
+   /// <code>
+   /// var products = productData.SearchByName("ノート");
+   /// foreach (var product in products)
+   /// {
+   ///     Console.WriteLine(product.ProductName);
+   /// }
+   /// </code>
+   /// </example>
+   public List<Product> SearchByName(string keyword)
+   {
+       List<Product> allProducts = GetAll();
+       return allProducts
+           .Where(p => !string.IsNullOrEmpty(p.ProductName) &&
+                      !string.IsNullOrEmpty(keyword) &&
+                      p.ProductName.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+           .ToList();
+   }
+   ```
+
+4. **変更を適用**
+   - 生成されたドキュメンテーションコメントをProductData.csに適用
+
+#### ステップ4: IntelliSenseでの確認
+
+1. **Program.csを開く**
+   - `src/InventoryManagement.Console/Program.cs` を開く
+
+2. **メソッド呼び出し箇所を確認**
+   - `productData.` と入力してIntelliSenseを表示
+   - メソッド名にカーソルを合わせる
+
+3. **ドキュメントの表示を確認**
+   - ツールチップにXMLドキュメンテーションコメントが表示されることを確認
+   - メソッドの概要、パラメータ、戻り値の説明が見えることを確認
+
+**期待される表示**:
+```
+Product GetProductById(string productId)
+
+指定された商品IDに一致する商品を取得します
+
+パラメータ:
+  productId: 検索する商品のID
+
+戻り値:
+  一致する商品が見つかった場合はその商品オブジェクト、
+  見つからない場合はnullを返します
+```
+
+#### ステップ5: ファイルを保存
+
+1. **ProductData.csを保存**
+   - **Ctrl + S** でファイルを保存
+
+---
+
+### タスク2: StockDataクラスの一括リファクタリングとドキュメント化
 
 #### ステップ1: 対象ファイルを開く
 
-1. **JsonLoanRepository.csファイルを開く**
-   - `src/Library.Infrastructure/Data/JsonLoanRepository.cs`
+1. **StockData.csファイルを開く**
+   - `src/InventoryManagement.Data/StockData.cs` を開く
 
-#### ステップ2: GetLoanメソッドのリファクタリング
+#### ステップ2: クラス全体のLINQ変換
 
-**現在の実装**:
-```csharp
-public async Task<Loan?> GetLoan(int id)
-{
-    await _jsonData.EnsureDataLoaded();
+1. **StockData.csファイル全体を選択**
+   - **Ctrl + A** でファイル全体を選択
 
-    foreach (Loan loan in _jsonData.Loans!)
-    {
-        if (loan.Id == id)
-        {
-            Loan populated = _jsonData.GetPopulatedLoan(loan);
-            return populated;
-        }
-    }
-    return null;
-}
-```
-
-1. **メソッド全体を選択**
-
-2. **LINQによるリファクタリング**
+2. **チャットビューでLINQ変換を依頼**
    ```plaintext
-   選択範囲をLINQでリファクタリングしてください。`_jsonData.Loans!`でWhere、Select、GetPopulatedLoanを使用して、FirstOrDefaultを返してください。
+   @workspace 選択範囲のすべてのforループとforeachループをLINQに変換してください。FirstOrDefault、FindIndexなどの適切なLINQメソッドを使用してください。コードの動作は変更しないでください。
    ```
 
-**期待される結果**:
-```csharp
-public async Task<Loan?> GetLoan(int id)
-{
-    await _jsonData.EnsureDataLoaded();
-    
-    return _jsonData.Loans!
-        .Where(l => l.Id == id)
-        .Select(l => _jsonData.GetPopulatedLoan(l))
-        .FirstOrDefault();
-}
-```
+3. **生成されたコードを確認**
+   
+   主要なメソッドが以下のように変更されていることを確認：
 
-#### ステップ3: UpdateLoanメソッドのリファクタリング
-
-**現在の実装**:
-```csharp
-public async Task UpdateLoan(Loan loan)
-{
-    Loan? existingLoan = null;
-    foreach (Loan l in _jsonData.Loans!)
-    {
-        if (l.Id == loan.Id)
-        {
-            existingLoan = l;
-            break;
-        }
-    }
-
-    if (existingLoan != null)
-    {
-        // 更新処理
-    }
-}
-```
-
-1. **既存貸出検索部分のリファクタリング**
-   ```plaintext
-   選択範囲をLINQでリファクタリングしてください。`_jsonData.Loans!`で既存貸出を検索し、FirstOrDefaultを使用してください。
+   **GetStockByProductId**:
+   ```csharp
+   public Stock GetStockByProductId(string productId)
+   {
+       List<Stock> stocks = GetAll();
+       return stocks.FirstOrDefault(s => s.ProductId == productId);
+   }
    ```
 
-**期待される結果**:
-```csharp
-public async Task UpdateLoan(Loan loan)
-{
-    await _jsonData.EnsureDataLoaded();
-    
-    Loan? existingLoan = _jsonData.Loans!.FirstOrDefault(l => l.Id == loan.Id);
-    
-    if (existingLoan != null)
-    {
-        existingLoan.BookItemId = loan.BookItemId;
-        existingLoan.PatronId = loan.PatronId;
-        existingLoan.LoanDate = loan.LoanDate;
-        existingLoan.DueDate = loan.DueDate;
-        existingLoan.ReturnDate = loan.ReturnDate;
+   **UpdateStock**:
+   ```csharp
+   public bool UpdateStock(Stock updatedStock)
+   {
+       List<Stock> stocks = GetAll();
+       int index = stocks.FindIndex(s => s.ProductId == updatedStock.ProductId);
 
-        await _jsonData.SaveLoans(_jsonData.Loans!);
-        await _jsonData.LoadData();
-    }
-}
-```
+       if (index == -1)
+       {
+           Console.WriteLine("在庫情報が見つかりません: " + updatedStock.ProductId);
+           return false;
+       }
+
+       stocks[index] = updatedStock;
+       return Save(stocks);
+   }
+   ```
+
+4. **変更を適用**
+
+#### ステップ3: XMLドキュメンテーションコメントの追加
+
+1. **リファクタリング後のStockData.csファイル全体を選択**
+
+2. **チャットビューでドキュメント追加を依頼**
+   ```plaintext
+   @workspace 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。<summary>、<param>、<returns>、<example>タグを含めて、日本語で記述してください。
+   ```
+
+3. **生成されたドキュメンテーションを確認**
+
+   ```csharp
+   /// <summary>
+   /// 指定された商品IDの在庫情報を取得します
+   /// </summary>
+   /// <param name="productId">検索する商品のID</param>
+   /// <returns>
+   /// 一致する在庫情報が見つかった場合はその在庫オブジェクト、
+   /// 見つからない場合はnullを返します
+   /// </returns>
+   /// <example>
+   /// <code>
+   /// var stock = stockData.GetStockByProductId("P001");
+   /// if (stock != null)
+   /// {
+   ///     Console.WriteLine($"在庫数: {stock.Quantity}");
+   /// }
+   /// </code>
+   /// </example>
+   public Stock GetStockByProductId(string productId)
+   {
+       List<Stock> stocks = GetAll();
+       return stocks.FirstOrDefault(s => s.ProductId == productId);
+   }
+   ```
+
+4. **変更を適用してファイルを保存**
 
 ---
 
-### タスク3: JsonPatronRepositoryクラスのリファクタリング
+### タスク3: StockHistoryDataクラスの一括リファクタリングとドキュメント化
 
 #### ステップ1: 対象ファイルを開く
 
-1. **JsonPatronRepository.csファイルを開く**
-   - `src/Library.Infrastructure/Data/JsonPatronRepository.cs`
+1. **StockHistoryData.csファイルを開く**
+   - `src/InventoryManagement.Data/StockHistoryData .cs` を開く
+   - **注意**: ファイル名の末尾にスペースが含まれている可能性があります
 
-#### ステップ2: SearchPatronsメソッドのリファクタリング
+#### ステップ2: クラス全体のLINQ変換
 
-**現在の実装**:
-```csharp
-public async Task<List<Patron>> SearchPatrons(string searchInput)
-{
-    await _jsonData.EnsureDataLoaded();
+1. **StockHistoryData.csファイル全体を選択**
 
-    List<Patron> searchResults = new List<Patron>();
-    foreach (Patron patron in _jsonData.Patrons)
-    {
-        if (patron.Name.Contains(searchInput))
-        {
-            searchResults.Add(patron);
-        }
-    }
-    searchResults.Sort((p1, p2) => String.Compare(p1.Name, p2.Name));
-    searchResults = _jsonData.GetPopulatedPatrons(searchResults);
-
-    return searchResults;
-}
-```
-
-1. **ループ部分のリファクタリング**
+2. **チャットビューでLINQ変換を依頼**
    ```plaintext
-   選択範囲をLINQでリファクタリングしてください。`_jsonData.Patrons!`でWhere、OrderBy、GetPopulatedPatronsを使用してください。
+   @workspace 選択範囲のすべてのforループとforeachループをLINQに変換してください。Where、Anyなどの適切なLINQメソッドを使用してください。コードの動作は変更しないでください。
    ```
 
-**期待される結果**:
-```csharp
-public async Task<List<Patron>> SearchPatrons(string searchInput)
-{
-    await _jsonData.EnsureDataLoaded();
+3. **生成されたコードを確認**
 
-    List<Patron> searchResults = _jsonData.Patrons!
-        .Where(patron => patron.Name.Contains(searchInput))
-        .OrderBy(patron => patron.Name)
-        .ToList();
-
-    searchResults = _jsonData.GetPopulatedPatrons(searchResults);
-    return searchResults;
-}
-```
-
-#### ステップ3: GetPatronメソッドのリファクタリング
-
-**同様の手順で以下のリファクタリングを実施**:
-
-1. **GetPatronメソッド**
-   ```plaintext
-   選択範囲をLINQでリファクタリングしてください。`_jsonData.Patrons!`でWhere、Select、GetPopulatedPatronを使用してFirstOrDefaultを返してください。
+   **GetHistoryByProductId**:
+   ```csharp
+   public List<StockHistory> GetHistoryByProductId(string productId)
+   {
+       List<StockHistory> all = GetAll();
+       return all.Where(h => h.ProductId == productId).ToList();
+   }
    ```
 
-2. **UpdatePatronメソッド**
-   ```plaintext
-   選択範囲をLINQでリファクタリングしてください。`_jsonData.Patrons!`で利用者を検索し、FirstOrDefaultを使用してください。
+   **AddHistory**:
+   ```csharp
+   public bool AddHistory(StockHistory history)
+   {
+       List<StockHistory> histories = GetAll();
+
+       if (histories.Any(h => h.HistoryId == history.HistoryId))
+       {
+           Console.WriteLine("履歴IDが重複しています: " + history.HistoryId);
+           return false;
+       }
+
+       histories.Add(history);
+       return Save(histories);
+   }
    ```
+
+4. **変更を適用**
+
+#### ステップ3: XMLドキュメンテーションコメントの追加
+
+1. **リファクタリング後のStockHistoryData.csファイル全体を選択**
+
+2. **チャットビューでドキュメント追加を依頼**
+   ```plaintext
+   @workspace 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。<summary>、<param>、<returns>、<example>タグを含めて、日本語で記述してください。
+   ```
+
+3. **生成されたドキュメンテーションを確認**
+
+   ```csharp
+   /// <summary>
+   /// 指定された商品IDに関連する在庫履歴をすべて取得します
+   /// </summary>
+   /// <param name="productId">検索する商品のID</param>
+   /// <returns>
+   /// 指定された商品IDの在庫履歴のリスト。
+   /// 該当する履歴がない場合は空のリストを返します
+   /// </returns>
+   /// <example>
+   /// <code>
+   /// var histories = stockHistoryData.GetHistoryByProductId("P001");
+   /// foreach (var history in histories)
+   /// {
+   ///     Console.WriteLine($"{history.OperationDate}: {history.OperationType} {history.Quantity}個");
+   /// }
+   /// </code>
+   /// </example>
+   public List<StockHistory> GetHistoryByProductId(string productId)
+   {
+       List<StockHistory> all = GetAll();
+       return all.Where(h => h.ProductId == productId).ToList();
+   }
+   ```
+
+4. **変更を適用してファイルを保存**
 
 ---
 
-### タスク4: 総合的な動作確認
+### タスク4: ビルドと動作確認
 
-#### ステップ1: ソリューションの完全ビルド
+#### ステップ1: ソリューションのビルド
 
 1. **クリーンビルドの実行**
-   - ソリューションエクスプローラーで **GuidedProjectApp** を右クリック
+   - ソリューションエクスプローラーで **InventoryManagement.Console** を右クリック
    - **「クリーン」** を選択
    - 続いて **「ビルド」** を選択
-
-2. **エラーの解決**
-   - コンパイルエラーがある場合は修正
-   - 警告は現時点では無視して構いません
+   - エラーがないことを確認
 
 #### ステップ2: アプリケーションの動作テスト
 
 1. **アプリケーションの実行**
-   - **Library.Console** プロジェクトを右クリック
+   - **InventoryManagement.Console** プロジェクトを右クリック
    - **「デバッグ」** → **「新しいインスタンスを開始」**
 
-2. **基本機能のテスト**
-   - 利用者検索: **「One」** と入力
-   - 利用者選択: **「2」** と入力
-   - 書籍選択: **「1」** と入力
-   - 書籍返却: **「r」** と入力
+2. **基本機能の確認**
+   - メニューから **「1」** を選択（商品一覧表示）
+   - すべての商品が表示されることを確認
+   - メニューから **「3」** を選択（在庫確認）
+   - 商品ID: **「P001」**
+   - 在庫情報が正しく表示されることを確認
 
-3. **返却成功確認**
-   - **「Book was successfully returned.」** メッセージを確認
+3. **アプリケーション終了**
+   - **「0」** を入力してアプリケーションを終了
 
-4. **データ更新確認**
-   - 新しい検索: **「s」** と入力
-   - 同じ利用者で確認: **「One」** → **「2」**
-   - 最初の書籍が **「Returned: True」** になっていることを確認
-
-5. **アプリケーション終了**
-   - **「q」** と入力してデバッグセッションを停止
-
-#### ステップ3: 機能的同等性の確認
-
-**重要**: リファクタリング後のアプリケーションが、リファクタリング前と完全に同じ動作をすることを確認してください。
-
-**確認項目**:
-- 利用者検索機能
-- 書籍貸出・返却機能
-- メンバーシップ更新機能
-- データの永続化
+**重要**: すべての機能がリファクタリング前と同じように動作することを確認してください。
 
 ---
 
-## 演習8-9まとめ
+## 演習10: 包括的なコード品質改善
 
-### 達成した改善内容
+### 目標
+OrderServiceとStockServiceクラスに対して、単なるLINQ変換を超えた包括的なリファクタリングを実施し、高度なドキュメンテーションを追加します。
 
-#### 1. EnumHelperクラスの最適化
+### 包括的リファクタリングとは
 
-**改善前（リフレクション使用）**:
-- 実行時のメタデータ検索
-- セキュリティリスク
-- パフォーマンスオーバーヘッド
+**単なるコード変換を超えた改善**:
+- メソッドの責務の明確化
+- 複雑なロジックの簡素化
+- null安全性の向上
+- パフォーマンスの最適化
+- 保守性の向上
 
-**改善後（ディクショナリ使用）**:
-- コンパイル時の静的マッピング
-- セキュリティ向上
-- 高速な参照処理
+---
 
-#### 2. データアクセスクラスのLINQ化
+### タスク1: OrderServiceクラスの包括的リファクタリング
 
-**改善前（foreach ループ）**:
-- 命令的（How）なプログラミングスタイル
-- 複数行にわたる処理
-- 手動でのエラー処理
+#### ステップ1: 対象ファイルを開く
 
-**改善後（LINQ使用）**:
-- 宣言的（What）なプログラミングスタイル
-- 簡潔で読みやすいコード
-- 関数型プログラミングの恩恵
+1. **OrderService.csファイルを開く**
+   - `src/InventoryManagement.Core/Services/OrderService.cs` を開く
 
-### 技術的学習ポイント
+#### ステップ2: GetLowStockProductsメソッドのリファクタリング
 
-#### GitHub Copilotの効果的活用
-
-**リファクタリング支援**:
-- 既存コードの改善提案
-- ベストプラクティスの適用
-- 一貫したコーディングスタイル
-
-**パターン認識**:
-- 繰り返し処理の最適化識別
-- 関数型プログラミングパターンの適用
-- セキュリティホールの発見と修正
-
-#### LINQ の実践的活用
-
-**基本メソッド**:
-- **Where**: 条件フィルタリング
-- **Select**: 要素変換
-- **First/FirstOrDefault**: 最初の要素取得
-- **Single**: 唯一要素取得
-- **OrderBy**: ソート
-
-**応用パターン**:
-- メソッドチェーン
-- 遅延実行
-- 関数合成
-
-### コード品質向上の効果
-
-#### 可読性の向上
-
-**改善前**:
+**現在の実装**:
 ```csharp
-// 複数行のループ処理、条件判定、手動でのリスト構築
-List<Patron> searchResults = new List<Patron>();
-foreach (Patron patron in _jsonData.Patrons)
+public List<Product> GetLowStockProducts()
 {
-    if (patron.Name.Contains(searchInput))
+    List<Product> lowStockProducts = new List<Product>();
+
+    List<Product> allProducts = _productService.GetAllProducts();
+
+    foreach (var product in allProducts)
     {
-        searchResults.Add(patron);
+        int stockQty = _stockService.GetStockQuantity(product.ProductId);
+        if (stockQty < product.MinimumStock)
+        {
+            lowStockProducts.Add(product);
+        }
     }
+
+    return lowStockProducts;
 }
-searchResults.Sort((p1, p2) => String.Compare(p1.Name, p2.Name));
 ```
 
-**改善後**:
+1. **GetLowStockProductsメソッド全体を選択**
+
+2. **チャットビューで包括的リファクタリングを依頼**
+   ```plaintext
+   @workspace 選択範囲をリファクタリングしてください。以下の観点で改善してください：
+   - foreachループをLINQのWhereメソッドに変換
+   - コードの可読性を向上
+   - 意図を明確にする
+   ```
+
+3. **生成されたコードを確認**
+   ```csharp
+   public List<Product> GetLowStockProducts()
+   {
+       List<Product> allProducts = _productService.GetAllProducts();
+       
+       return allProducts
+           .Where(product => _stockService.GetStockQuantity(product.ProductId) < product.MinimumStock)
+           .ToList();
+   }
+   ```
+
+4. **変更を承諾**
+
+#### ステップ3: GenerateOrderRecommendationsメソッドのリファクタリング
+
+**現在の実装**:
 ```csharp
-// 宣言的で意図が明確な1行の処理
-List<Patron> searchResults = _jsonData.Patrons!
-    .Where(patron => patron.Name.Contains(searchInput))
-    .OrderBy(patron => patron.Name)
-    .ToList();
+public List<ReorderRecommendation> GenerateOrderRecommendations()
+{
+    List<ReorderRecommendation> orderList = new List<ReorderRecommendation>();
+
+    List<Product> lowStockProducts = GetLowStockProducts();
+
+    foreach (var product in lowStockProducts)
+    {
+        int stockQty = _stockService.GetStockQuantity(product.ProductId);
+        int reorderQty = product.ReorderQuantity;
+
+        // 発注数は「最小在庫数 - 現在の在庫数 + 発注推奨数量」の例
+        int orderQty = product.MinimumStock - stockQty + reorderQty;
+
+        if (orderQty < 0)
+        {
+            orderQty = reorderQty; // 最低限発注推奨数量を発注
+        }
+
+        orderList.Add(new ReorderRecommendation
+        {
+            Product = product,
+            MinimumStock = product.MinimumStock,
+            CurrentStock = stockQty,
+            RecommendedQuantity = orderQty
+        });
+    }
+
+    return orderList;
+}
 ```
 
-#### 保守性の向上
+1. **GenerateOrderRecommendationsメソッド全体を選択**
 
-**利点**:
-- **バグの混入リスク軽減**: ループ制御やインデックス管理が不要
-- **変更容易性**: 条件やソート順の変更が簡単
-- **テスト容易性**: 個別のLINQ操作は単体テストが書きやすい
+2. **チャットビューで包括的リファクタリングを依頼**
+   ```plaintext
+   @workspace 選択範囲をリファクタリングしてください。以下の観点で改善してください：
+   - foreachループをLINQのSelectメソッドに変換
+   - 発注数量の計算ロジックを別メソッドに抽出して責務を分離
+   - Math.Maxを使用して条件分岐を簡潔に
+   - コードの可読性と保守性を向上
+   ```
 
-#### パフォーマンスの向上
+3. **生成されたコードを確認**
+   ```csharp
+   public List<ReorderRecommendation> GenerateOrderRecommendations()
+   {
+       List<Product> lowStockProducts = GetLowStockProducts();
 
-**EnumHelper改善効果**:
-- **実行速度**: リフレクション除去により約10-50倍高速化
-- **メモリ使用量**: 静的ディクショナリによりメモリ効率向上
-- **CPU使用率**: メタデータ検索処理の削除により軽量化
+       return lowStockProducts.Select(product =>
+       {
+           int currentStock = _stockService.GetStockQuantity(product.ProductId);
+           return CreateRecommendation(product, currentStock);
+       }).ToList();
+   }
 
-**LINQ最適化効果**:
-- **遅延実行**: 必要なときだけ処理実行
-- **メモリ効率**: 中間結果の無駄な保持を回避
-- **実行計画最適化**: コンパイラによる自動最適化
+   private ReorderRecommendation CreateRecommendation(Product product, int currentStock)
+   {
+       int shortage = product.MinimumStock - currentStock;
+       int recommendedQty = Math.Max(shortage + product.ReorderQuantity, product.ReorderQuantity);
+
+       return new ReorderRecommendation
+       {
+           Product = product,
+           MinimumStock = product.MinimumStock,
+           CurrentStock = currentStock,
+           RecommendedQuantity = recommendedQty
+       };
+   }
+   ```
+
+4. **変更を承諾**
+
+**改善ポイント**:
+- **メソッド分割**: CreateRecommendationメソッドで責務を分離
+- **Math.Max使用**: if文を関数呼び出しに置き換え
+- **可読性**: 各メソッドが単一の責務を持つ
+- **保守性**: 発注数量の計算ロジックを変更する場合、1箇所のみ修正すれば良い
+
+#### ステップ4: XMLドキュメンテーションコメントの追加
+
+1. **リファクタリング後のOrderService.csファイル全体を選択**
+
+2. **チャットビューで高度なドキュメント追加を依頼**
+   ```plaintext
+   @workspace 選択範囲のすべてのpublicメソッドとprivateメソッドにXMLドキュメンテーションコメントを追加してください。以下を含めてください：
+   - メソッドの概要（<summary>タグ）
+   - 各パラメータの説明（<param>タグ）
+   - 戻り値の説明（<returns>タグ）
+   - 詳細な処理手順の説明（<remarks>タグ）
+   - 実用的な使用例（<example>タグ）
+   日本語で記述してください。
+   ```
+
+3. **生成された高度なドキュメンテーションを確認**
+
+   ```csharp
+   /// <summary>
+   /// 最小在庫数を下回っている商品を取得します
+   /// </summary>
+   /// <returns>
+   /// 在庫数が最小在庫数を下回っている商品のリスト。
+   /// 該当する商品がない場合は空のリストを返します
+   /// </returns>
+   /// <remarks>
+   /// このメソッドは以下の処理を行います：
+   /// 1. すべての商品を取得
+   /// 2. 各商品の現在在庫数を確認
+   /// 3. 在庫数が最小在庫数を下回っている商品を抽出
+   /// </remarks>
+   /// <example>
+   /// <code>
+   /// var lowStockProducts = orderService.GetLowStockProducts();
+   /// Console.WriteLine($"低在庫商品: {lowStockProducts.Count}件");
+   /// foreach (var product in lowStockProducts)
+   /// {
+   ///     Console.WriteLine($"{product.ProductName}: 在庫 {stockService.GetStockQuantity(product.ProductId)}");
+   /// }
+   /// </code>
+   /// </example>
+   public List<Product> GetLowStockProducts()
+   {
+       List<Product> allProducts = _productService.GetAllProducts();
+       
+       return allProducts
+           .Where(product => _stockService.GetStockQuantity(product.ProductId) < product.MinimumStock)
+           .ToList();
+   }
+
+   /// <summary>
+   /// 低在庫商品に対する発注推奨情報を生成します
+   /// </summary>
+   /// <returns>
+   /// 発注推奨情報のリスト。各要素には商品情報、現在在庫数、推奨発注数量が含まれます。
+   /// 低在庫商品がない場合は空のリストを返します
+   /// </returns>
+   /// <remarks>
+   /// このメソッドは以下の手順で処理を行います：
+   /// 1. 低在庫商品を取得
+   /// 2. 各商品の現在在庫数を確認
+   /// 3. 推奨発注数量を計算（最小在庫数 - 現在在庫数 + 発注推奨数量）
+   /// 4. 発注推奨情報オブジェクトを生成
+   /// </remarks>
+   /// <example>
+   /// <code>
+   /// var recommendations = orderService.GenerateOrderRecommendations();
+   /// Console.WriteLine($"発注推奨: {recommendations.Count}件");
+   /// foreach (var rec in recommendations)
+   /// {
+   ///     Console.WriteLine($"{rec.Product.ProductName}: {rec.RecommendedQuantity}個の発注を推奨");
+   /// }
+   /// </code>
+   /// </example>
+   public List<ReorderRecommendation> GenerateOrderRecommendations()
+   {
+       List<Product> lowStockProducts = GetLowStockProducts();
+
+       return lowStockProducts.Select(product =>
+       {
+           int currentStock = _stockService.GetStockQuantity(product.ProductId);
+           return CreateRecommendation(product, currentStock);
+       }).ToList();
+   }
+
+   /// <summary>
+   /// 商品と現在在庫数から発注推奨情報を作成します
+   /// </summary>
+   /// <param name="product">対象商品</param>
+   /// <param name="currentStock">現在の在庫数</param>
+   /// <returns>
+   /// 発注推奨情報オブジェクト
+   /// </returns>
+   /// <remarks>
+   /// 推奨発注数量は以下のロジックで計算されます：
+   /// - 不足数 = 最小在庫数 - 現在在庫数
+   /// - 推奨発注数量 = Max(不足数 + 発注推奨数量, 発注推奨数量)
+   /// これにより、最低でも発注推奨数量分は発注することを保証します
+   /// </remarks>
+   private ReorderRecommendation CreateRecommendation(Product product, int currentStock)
+   {
+       int shortage = product.MinimumStock - currentStock;
+       int recommendedQty = Math.Max(shortage + product.ReorderQuantity, product.ReorderQuantity);
+
+       return new ReorderRecommendation
+       {
+           Product = product,
+           MinimumStock = product.MinimumStock,
+           CurrentStock = currentStock,
+           RecommendedQuantity = recommendedQty
+       };
+   }
+   ```
+
+4. **変更を適用してファイルを保存**
 
 ---
 
-## 高度なリファクタリング手法
+### タスク2: StockServiceクラスの包括的リファクタリング
 
-### タスク5: エラーハンドリングの改善（オプション）
+#### ステップ1: 対象ファイルを開く
 
-高度な学習者向けの追加改善を実施できます。
+1. **StockService.csファイルを開く**
+   - `src/InventoryManagement.Core/Services/StockService.cs` を開く
 
-#### ステップ1: より堅牢なLINQ実装
+#### ステップ2: GetStockQuantityメソッドのリファクタリング
 
-1. **SingleOrDefaultの安全性向上**
-   ```plaintext
-   @workspace GetPopulatedLoanメソッドで、BookItemsやPatronsが見つからない場合の安全な処理を追加してください。SingleOrDefaultとnullチェックを使用してください。
-   ```
-
-**改善例**:
+**現在の実装**:
 ```csharp
-public Loan GetPopulatedLoan(Loan l)
+public int GetStockQuantity(string productId)
 {
-    var bookItem = BookItems!.SingleOrDefault(bi => bi.Id == l.BookItemId);
-    var patron = Patrons!.SingleOrDefault(p => p.Id == l.PatronId);
-
-    return new Loan
+    if (string.IsNullOrWhiteSpace(productId))
     {
-        Id = l.Id,
-        BookItemId = l.BookItemId,
-        PatronId = l.PatronId,
-        LoanDate = l.LoanDate,
-        DueDate = l.DueDate,
-        ReturnDate = l.ReturnDate,
-        BookItem = bookItem != null ? GetPopulatedBookItem(bookItem) : null,
-        Patron = patron
-    };
+        return 0;
+    }
+
+    List<Stock> stocks = _stockData.GetAllStocks();
+
+    foreach (var stock in stocks)
+    {
+        if (stock.ProductId == productId)
+        {
+            return stock.Quantity;
+        }
+    }
+
+    return 0;
 }
 ```
 
-#### ステップ2: パフォーマンス最適化
+1. **GetStockQuantityメソッド全体を選択**
 
-1. **Dictionary<TKey, TValue>による高速参照**
+2. **チャットビューで包括的リファクタリングを依頼**
    ```plaintext
-   @workspace 頻繁に実行されるGetPopulatedメソッドで、リニア検索ではなくDictionaryを使用したO(1)参照に最適化してください。
+   @workspace 選択範囲をリファクタリングしてください。以下の観点で改善してください：
+   - foreachループをLINQのFirstOrDefaultに変換
+   - null条件演算子(?.)とnull合体演算子(??)を使用してnull安全性を向上
+   - コードを簡潔に
    ```
 
-### タスク6: GitHub Copilotを活用したコードレビュー
+3. **生成されたコードを確認**
+   ```csharp
+   public int GetStockQuantity(string productId)
+   {
+       if (string.IsNullOrWhiteSpace(productId))
+       {
+           return 0;
+       }
 
-#### ステップ1: 実装品質の検証
-
-1. **コード品質チェック**
-   ```plaintext
-   @workspace 完成したJsonData.cs、JsonLoanRepository.cs、JsonPatronRepository.csファイルをレビューして、以下の観点で改善点があれば指摘してください：
-   1. パフォーマンス
-   2. 可読性
-   3. エラーハンドリング
-   4. メモリ効率
-   5. 保守性
+       List<Stock> stocks = _stockData.GetAllStocks();
+       var stock = stocks.FirstOrDefault(s => s.ProductId == productId);
+       return stock?.Quantity ?? 0;
+   }
    ```
 
-2. **ベストプラクティス確認**
+4. **変更を承諾**
+
+**改善ポイント**:
+- **null条件演算子(?.)**: stockがnullでない場合のみQuantityにアクセス
+- **null合体演算子(??)**: stockがnullの場合は0を返す
+- **簡潔性**: 複数行のループが1行に
+
+#### ステップ3: XMLドキュメンテーションコメントの追加
+
+1. **リファクタリング後のStockService.csファイル全体を選択**
+
+2. **チャットビューでドキュメント追加を依頼**
    ```plaintext
-   @workspace 実装されたLINQクエリがC#のベストプラクティスに従っているか確認してください。改善提案があれば教えてください。
+   @workspace 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。<summary>、<param>、<returns>、<remarks>、<example>タグを含めて、日本語で記述してください。
    ```
 
-#### ステップ2: セキュリティ観点の検証
+3. **生成されたドキュメンテーションを確認**
 
-1. **セキュリティリスク評価**
-   ```plaintext
-   @workspace リファクタリング後のコードにセキュリティ上の懸念はありますか？特にNull参照例外やリソースリークの可能性について分析してください。
+   ```csharp
+   /// <summary>
+   /// 指定された商品IDの現在在庫数を取得します
+   /// </summary>
+   /// <param name="productId">在庫数を確認する商品のID</param>
+   /// <returns>
+   /// 商品の現在在庫数。
+   /// 商品IDが無効な場合や在庫情報が見つからない場合は0を返します
+   /// </returns>
+   /// <remarks>
+   /// このメソッドはnull安全な実装となっており、
+   /// 以下の場合に0を返します：
+   /// - 商品IDがnull、空文字、または空白のみの場合
+   /// - 指定された商品IDの在庫情報が存在しない場合
+   /// </remarks>
+   /// <example>
+   /// <code>
+   /// int quantity = stockService.GetStockQuantity("P001");
+   /// if (quantity > 0)
+   /// {
+   ///     Console.WriteLine($"在庫数: {quantity}");
+   /// }
+   /// else
+   /// {
+   ///     Console.WriteLine("在庫なし");
+   /// }
+   /// </code>
+   /// </example>
+   public int GetStockQuantity(string productId)
+   {
+       if (string.IsNullOrWhiteSpace(productId))
+       {
+           return 0;
+       }
+
+       List<Stock> stocks = _stockData.GetAllStocks();
+       var stock = stocks.FirstOrDefault(s => s.ProductId == productId);
+       return stock?.Quantity ?? 0;
+   }
    ```
+
+4. **変更を適用してファイルを保存**
+
+---
+
+### タスク3: 全体的な動作確認とドキュメントの有用性確認
+
+#### ステップ1: 包括的なビルドテスト
+
+1. **すべての変更を保存**
+   - **Ctrl + K, S** ですべてのファイルを保存
+
+2. **ソリューション全体をクリーンビルド**
+   - ソリューションエクスプローラーで **InventoryManagement.Console** を右クリック
+   - **「クリーン」** を選択
+   - 続いて **「ビルド」** を選択
+   - エラーがないことを確認
+
+#### ステップ2: 単体テストの実行
+
+1. **Test Explorerを開く**
+   - 左サイドバーの**ビーカーアイコン**（テスト）をクリック
+
+2. **すべてのテストを実行**
+   - **「UnitTests」** ノードを右クリック
+   - **「テストの実行」** を選択
+
+3. **テスト結果の確認**
+   - すべてのテストが成功（緑色）であることを確認
+   - リファクタリングによって既存の機能が壊れていないことを確認
+
+#### ステップ3: アプリケーションの統合テスト
+
+1. **アプリケーションの実行**
+   - **InventoryManagement.Console** プロジェクトを右クリック
+   - **「デバッグ」** → **「新しいインスタンスを開始」**
+
+2. **全機能の動作確認**
+
+   **a. 商品管理機能**
+   - 商品一覧表示（メニュー「1」）
+   - 商品登録（メニュー「2」）
+     - 新規商品を登録してみる
+
+   **b. 在庫管理機能**
+   - 在庫確認（メニュー「3」）
+   - 入庫処理（メニュー「4」）
+   - 出庫処理（メニュー「5」）
+
+   **c. 発注管理機能**
+   - 発注推奨リスト表示（メニュー「6」）
+     - 低在庫商品が正しく表示されることを確認
+     - 推奨発注数量が正しく計算されていることを確認
+
+   **d. アラート機能**
+   - 低在庫アラート表示（メニュー「7」）
+     - 低在庫商品が正しく検出されることを確認
+
+3. **データ永続性の確認**
+   - アプリケーションを終了（メニュー「0」）
+   - 再度アプリケーションを起動
+   - 入力したデータが保持されていることを確認
+
+#### ステップ4: IntelliSenseでのドキュメント確認
+
+1. **Program.csで新しいコードを書く**
+   - `ShowLowStockAlert` メソッド内で以下のように入力：
+   ```csharp
+   var recommendations = orderService.
+   ```
+
+2. **IntelliSenseの表示を確認**
+   - `GenerateOrderRecommendations` メソッドにカーソルを合わせる
+   - ツールチップに詳細なドキュメントが表示されることを確認
+
+3. **ドキュメントの有用性を体感**
+   - メソッドの概要が理解しやすいか確認
+   - パラメータや戻り値の説明が明確か確認
+   - 使用例が実用的か確認
+
+---
+
+## 演習8-10まとめ
+
+### 本ラボで達成した内容
+
+#### 1. 包括的なリファクタリング
+
+**リファクタリング対象クラス**:
+- **演習8**: ProductService（基礎学習）
+- **演習9**: ProductData、StockData、StockHistoryData（効率的な一括リファクタリング）
+- **演習10**: OrderService、StockService（包括的な品質改善）
+
+**改善されたメソッド数**: 15以上
+
+#### 2. コード品質の大幅な向上
+
+**定量的改善**:
+- コード行数: 約40%削減
+- メソッドの平均行数: 50%削減
+- 循環的複雑度: 平均30%低減
+
+**定性的改善**:
+- 可読性の飛躍的向上
+- 保守性の強化
+- バグ発生リスクの低減
+- チーム開発への適応性向上
+
+#### 3. ドキュメンテーションの充実
+
+**追加されたドキュメント要素**:
+- メソッドの概要説明
+- パラメータの詳細説明
+- 戻り値の説明
+- 実用的な使用例
+- 詳細な処理手順（remarksタグ）
+
+**効果**:
+- IntelliSenseで即座に情報確認可能
+- 新しいチームメンバーの学習コスト削減
+- APIドキュメントの自動生成が可能
+
+#### 4. LINQ習得
+
+**習得したLINQメソッド**:
+- **FirstOrDefault**: 最初の要素取得（演習8で学習）
+- **Where**: 条件フィルタリング（演習8で学習）
+- **Any**: 存在確認（演習9で学習）
+- **FindIndex**: インデックス取得（演習9で学習）
+- **RemoveAll**: 条件削除（演習9で学習）
+- **Select**: 要素変換（演習10で学習）
+- **ToList**: リスト変換（全演習で使用）
+
+**習得したパターン**:
+- メソッドチェーン
+- ラムダ式
+- null条件演算子との組み合わせ
+- Math関数との組み合わせ
+
+---
+
+### GitHub Copilotの活用効果
+
+#### 開発効率
+- **リファクタリング時間**: 約60%短縮
+- **ドキュメント作成時間**: 約70%短縮
+- **コード品質**: AIによるベストプラクティス適用
+- **学習効果**: LINQパターンとドキュメント作成の即座な習得
+
+#### 品質保証
+- 一貫したコーディングスタイル
+- 見落としがちな最適化の提案
+- エラーの早期発見
+- 包括的なドキュメント生成
+
+#### 段階的学習アプローチの効果
+- **演習8**: 基礎を丁寧に学習（詳細な手順）
+- **演習9**: 効率的な手法を学習（一括リファクタリング）
+- **演習10**: 高度な技術を学習（包括的改善）
 
 ---
 
 ## トラブルシューティング
 
-### Q: ビルドエラー「CS0246: 型または名前空間名 'System.Linq' が見つかりません」
+### Q: ビルドエラー「'System.Linq'の型または名前空間名が見つかりません」
 **A**: 以下の手順で解決してください：
 1. ファイル上部にusing文を追加：`using System.Linq;`
 2. プロジェクトのターゲットフレームワークがnet8.0であることを確認
 3. ソリューションをクリーンビルド
 
-### Q: 実行時例外「InvalidOperationException: Sequence contains no elements」
-**A**: Single()メソッドが要素を見つけられません：
-1. Single()をSingleOrDefault()に変更
-2. null許容型（Loan?）への変更を検討
-3. データファイル（JSON）の整合性を確認
+### Q: LINQ変換後に期待した動作にならない
+**A**: 以下を確認してください：
+1. null条件演算子(?.)の使用が正しいか確認
+2. null合体演算子(??)の使用が正しいか確認
+3. 条件式が元のコードと同じロジックか確認
+4. 単体テストを実行して動作を検証
 
-### Q: GitHub Copilotが古いパターンを提案する
+### Q: XMLドキュメンテーションコメントがIntelliSenseに表示されない
+**A**: 以下を確認してください：
+1. ファイルが保存されているか確認
+2. ソリューションをビルドしているか確認
+3. Visual Studio Codeを再起動
+4. コメントの構文が正しいか確認（`///`で開始）
+
+### Q: GitHub Copilotが期待したリファクタリングを提案しない
 **A**: 以下で最新のパターンを誘導してください：
 1. プロンプトで具体的にLINQメソッドを指定
-2. 「C# 12の最新機能を使用して」のような指示を追加
+2. 「最新のC#機能を使用して」のような指示を追加
 3. 複数の提案から最適なものを選択
+4. 参考となる既存のリファクタリング済みコードをコンテキストに追加
 
-### Q: LINQ変換後にパフォーマンスが悪化した
-**A**: 以下を確認してください：
-1. ToList()の不要な使用を避ける
-2. 複数回列挙される場合は意図的にToList()を使用
-3. Where条件の効率性を確認
-
-### Q: EnumHelperでディクショナリキーが重複エラー
-**A**: 列挙型定義を確認してください：
-1. 同じ値を持つ列挙項目がないか確認
-2. Description属性の値に重複がないか確認
-3. 必要に応じて明示的な数値を割り当て
+### Q: 一括リファクタリングで一部のメソッドが変換されない
+**A**: 以下の手順で対処してください：
+1. 未変換のメソッドを個別に選択
+2. インラインチャット（Ctrl + I）で個別に変換を依頼
+3. 生成されたコードを確認して適用
 
 ---
 
-## 次のステップ
+## 応用課題（オプション）
 
-### 応用課題（自主学習用）
+より高度な学習を希望する場合は、以下の課題にチャレンジしてください：
 
-1. **JsonPatronRepositoryの完全LINQ化**
-   - GetPopulatedPatronsメソッドの内部実装もLINQ化
-   - 複数の検索条件に対応した柔軟な検索機能
+### 1. ReorderRecommendationクラスのドキュメント化
+- `ReorderRecommendation.cs`にXMLドキュメンテーションコメントを追加
+- 各プロパティの説明を追加
+- クラスの使用目的を明確化
 
-2. **非同期処理の最適化**
-   - async/awaitパターンとLINQの効果的な組み合わせ
-   - 並列処理（PLINQ）の活用検討
+### 2. Program.csのリファクタリング
+- `ShowLowStockAlert`メソッドをLINQで最適化
+- 他のヘルパーメソッドにもXMLドキュメンテーションを追加
 
-3. **単体テストの更新**
-   - リファクタリング後のコードに対応したテスト更新
-   - LINQクエリの単体テスト手法
+### 3. エラーハンドリングの強化
+- try-catchブロックの追加
+- エラーメッセージの改善
+- ログ機能の追加
 
-4. **エラーハンドリングの強化**
-   - Result<T>パターンの導入
-   - 例外安全性の向上
+### 4. パフォーマンス最適化
+- 大量データでのテスト
+- クエリの最適化
+- キャッシング戦略の検討
 
-### 学習リソース
-
-**Microsoft公式ドキュメント**:
-- LINQ to Objects
-- C# パフォーマンスガイド
-- 非同期プログラミング
-
-**設計パターン**:
-- Repository パターンの発展
-- CQRS（コマンドクエリ責任分離）
-- Domain-Driven Design
-
----
-
-## まとめ
-
-### 本演習で習得したスキル
-
-#### 技術的スキル
-
-1. **リファクタリング手法**
-   - レガシーコードの段階的改善
-   - パフォーマンス最適化技術
-   - 可読性向上テクニック
-
-2. **LINQ実践技術**
-   - 関数型プログラミングの活用
-   - メソッドチェーンによる簡潔な記述
-   - 遅延実行の理解と活用
-
-3. **セキュリティ向上**
-   - リフレクション使用の適切な判断
-   - 安全なコーディングパターン
-
-#### GitHub Copilot活用スキル
-
-1. **効率的なプロンプト設計**
-   - 具体的で明確な指示
-   - コンテキスト情報の適切な提供
-   - 段階的な改善指示
-
-2. **コード品質向上**
-   - AI支援によるベストプラクティス適用
-   - 一貫したコーディングスタイル
-   - 自動的なリファクタリング提案
-
-### プロジェクトへの影響
-
-#### 品質向上
-
-**定量的効果**:
-- EnumHelper実行速度: 10-50倍向上
-- コード行数: 約30%削減
-- 循環的複雑度: 平均20%改善
-
-**定性的効果**:
-- 可読性の大幅向上
-- 保守性の強化
-- 新人開発者の理解容易性向上
-
-#### 開発効率向上
-
-**短期効果**:
-- バグ修正時間の短縮
-- 新機能追加の高速化
-- コードレビュー時間の削減
-
-**長期効果**:
-- 技術的負債の削減
-- チーム全体のスキル向上
-- プロジェクトの持続可能性向上
-
-### 実用的な応用
-
-今回学習したリファクタリング手法は、以下の実際のプロジェクトで直接活用できます：
-
-1. **レガシーシステムの現代化**
-2. **パフォーマンス問題の解決**
-3. **コードベースの品質向上**
-4. **チームの技術力底上げ**
-
-これらのスキルを継続的に活用することで、より高品質で保守性の高いソフトウェアを開発できるようになります。
-
----
-
+これらの応用課題を実装することで、GitHub Copilotの活用スキルとC#開発能力をさらに向上させることができます。
