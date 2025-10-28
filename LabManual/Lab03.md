@@ -536,9 +536,9 @@ UnitTests/
 
 より高度な学習を希望する場合は、以下のテスト実装にチャレンジしてください：
 
-1. **AddProductTestクラスの完成**
-   - AddProductTestへの追加テストケース実装
-   - 必要に応じて、ProductServiceクラスの修正
+1. **UpdateProductTestクラスの完成**
+   - UpdateProductTestのテストケース実装
+   - テストケース作成後、ProductServiceクラスの修正
 
 2. **StockServiceクラスのテスト**
    - AddStockメソッドのテスト（履歴記録を含む）
