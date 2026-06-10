@@ -73,7 +73,7 @@ UnitTests/
 
 4. **テストアプローチの分析**
    ```plaintext
-   @workspace このワークスペースで実装されている単体テストのアプローチについて説明してください。以下の観点で分析してください：
+   #codebase このワークスペースで実装されている単体テストのアプローチについて説明してください。以下の観点で分析してください：
    1. モックの使用方法
    2. テストデータの作成パターン（ファクトリークラス）
    3. テストケースの構成方法
@@ -84,7 +84,7 @@ UnitTests/
 
 1. **利点分析の実行**
    ```plaintext
-   @workspace このテストアプローチにはどのような利点がありますか？コード品質、保守性、開発効率の観点から説明してください。
+   #codebase このテストアプローチにはどのような利点がありますか？コード品質、保守性、開発効率の観点から説明してください。
    ```
 
 2. **GitHub Copilotの回答を確認**
@@ -101,7 +101,7 @@ UnitTests/
 
 1. **拡張方針の確認**
    ```plaintext
-   @workspace UnitTestsプロジェクトをInventoryManagement.Dataプロジェクトのメソッドテストに拡張する方法について、プロセスの概要を教えてください。
+   #codebase UnitTestsプロジェクトをInventoryManagement.Dataプロジェクトのメソッドテストに拡張する方法について、プロセスの概要を教えてください。
    ```
 
 2. **拡張手順の理解**
@@ -171,7 +171,7 @@ UnitTests/
 
 2. **フィールドとコンストラクターの生成**
    ```plaintext
-   @workspace GetStockByProductIdTest.csファイルのフィールドとクラスコンストラクターを作成してください。namespace はInventoryManagement.UnitTests.Data.StockDataTestsとしてください。このクラスはStockData.csファイルのGetStockByProductIdメソッドの単体テストに使用されます。
+   #codebase GetStockByProductIdTest.csファイルのフィールドとクラスコンストラクターを作成してください。namespace はInventoryManagement.UnitTests.Data.StockDataTestsとしてください。このクラスはStockData.csファイルのGetStockByProductIdメソッドの単体テストに使用されます。
 
    以下の要件に従ってください：
    1. private readonlyフィールド: _stockData（StockData型）
@@ -211,7 +211,7 @@ UnitTests/
 
 2. **GetStockByProductId成功ケースの実装**
    ```plaintext
-   @workspace 選択範囲を更新して、StockData.GetStockByProductIdメソッドの単体テストを含めてください。この単体テストは、Data層のテストとして、GetStockByProductIdメソッドの内部ロジック（ループ処理と条件分岐）をテストする必要があります。
+   #selection 選択範囲を更新して、StockData.GetStockByProductIdメソッドの単体テストを含めてください。この単体テストは、Data層のテストとして、GetStockByProductIdメソッドの内部ロジック（ループ処理と条件分岐）をテストする必要があります。
 
    以下の要件に従ってください：
    1. _stockDataは部分モック（ForPartsOf）として作成済みです
@@ -299,7 +299,7 @@ UnitTests/
    - AddProductTestクラス内にカーソルを置く
    - 以下のプロンプトを入力：
    ```plaintext
-   @workspace AddProductTestクラスにフィールドとコンストラクターを追加してください。他のProductServiceTestsクラスと同じパターンで、_mockProductDataと_productServiceフィールドを作成してください。
+   #codebase AddProductTestクラスにフィールドとコンストラクターを追加してください。他のProductServiceTestsクラスと同じパターンで、_mockProductDataと_productServiceフィールドを作成してください。
    ```
 
 2. **生成されたコードの確認**
@@ -321,7 +321,7 @@ UnitTests/
 
 1. **成功ケースのテスト作成**
    ```plaintext
-   @workspace AddProductTestクラスに、ProductService.AddProductメソッドの単体テストを追加してください。有効な商品を追加して成功するケースをテストしてください。ProductFactoryを使用してテストデータを作成し、_mockProductDataのAddProductメソッドがtrueを返すように設定してください。
+   #codebase AddProductTestクラスに、ProductService.AddProductメソッドの単体テストを追加してください。有効な商品を追加して成功するケースをテストしてください。ProductFactoryを使用してテストデータを作成し、_mockProductDataのAddProductメソッドがtrueを返すように設定してください。
    ```
 
 2. **生成されたテストメソッドの確認**

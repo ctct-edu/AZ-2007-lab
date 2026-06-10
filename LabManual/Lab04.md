@@ -288,7 +288,7 @@ public List<Product> GetByCategory(string category)
 
 2. **チャットビューでLINQ変換を依頼**
    ```plaintext
-   @workspace 選択範囲のすべてのforループとforeachループをLINQに変換してください。以下のLINQメソッドを適切に使用してください：
+   #selection 選択範囲のすべてのforループとforeachループをLINQに変換してください。以下のLINQメソッドを適切に使用してください：
    - FirstOrDefault: 最初の要素を取得
    - Where: 条件フィルタリング
    - Any: 存在確認
@@ -385,7 +385,7 @@ public List<Product> GetByCategory(string category)
 
 2. **チャットビューでドキュメント追加を依頼**
    ```plaintext
-   @workspace 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。以下を含めてください：
+   #selection 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。以下を含めてください：
    - メソッドの概要（<summary>タグ）
    - 各パラメータの説明（<param>タグ）
    - 戻り値の説明（<returns>タグ）
@@ -502,7 +502,7 @@ Product GetProductById(string productId)
 
 2. **チャットビューでLINQ変換を依頼**
    ```plaintext
-   @workspace 選択範囲のすべてのforループとforeachループをLINQに変換してください。FirstOrDefault、FindIndexなどの適切なLINQメソッドを使用してください。コードの動作は変更しないでください。
+   #selection 選択範囲のすべてのforループとforeachループをLINQに変換してください。FirstOrDefault、FindIndexなどの適切なLINQメソッドを使用してください。コードの動作は変更しないでください。
    ```
 
 3. **生成されたコードを確認**
@@ -544,7 +544,7 @@ Product GetProductById(string productId)
 
 2. **チャットビューでドキュメント追加を依頼**
    ```plaintext
-   @workspace 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。<summary>、<param>、<returns>、<example>タグを含めて、日本語で記述してください。
+   #selection 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。<summary>、<param>、<returns>、<example>タグを含めて、日本語で記述してください。
    ```
 
 3. **生成されたドキュメンテーションを確認**
@@ -592,7 +592,7 @@ Product GetProductById(string productId)
 
 2. **チャットビューでLINQ変換を依頼**
    ```plaintext
-   @workspace 選択範囲のすべてのforループとforeachループをLINQに変換してください。Where、Anyなどの適切なLINQメソッドを使用してください。コードの動作は変更しないでください。
+   #selection 選択範囲のすべてのforループとforeachループをLINQに変換してください。Where、Anyなどの適切なLINQメソッドを使用してください。コードの動作は変更しないでください。
    ```
 
 3. **生成されたコードを確認**
@@ -631,7 +631,7 @@ Product GetProductById(string productId)
 
 2. **チャットビューでドキュメント追加を依頼**
    ```plaintext
-   @workspace 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。<summary>、<param>、<returns>、<example>タグを含めて、日本語で記述してください。
+   #selection 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。<summary>、<param>、<returns>、<example>タグを含めて、日本語で記述してください。
    ```
 
 3. **生成されたドキュメンテーションを確認**
@@ -745,7 +745,7 @@ public List<Product> GetLowStockProducts()
 
 2. **チャットビューで包括的リファクタリングを依頼**
    ```plaintext
-   @workspace 選択範囲をリファクタリングしてください。以下の観点で改善してください：
+   #selection 選択範囲をリファクタリングしてください。以下の観点で改善してください：
    - foreachループをLINQのWhereメソッドに変換
    - コードの可読性を向上
    - 意図を明確にする
@@ -805,7 +805,7 @@ public List<ReorderRecommendation> GenerateOrderRecommendations()
 
 2. **チャットビューで包括的リファクタリングを依頼**
    ```plaintext
-   @workspace 選択範囲をリファクタリングしてください。以下の観点で改善してください：
+   #selection 選択範囲をリファクタリングしてください。以下の観点で改善してください：
    - foreachループをLINQのSelectメソッドに変換
    - 発注数量の計算ロジックを別メソッドに抽出して責務を分離
    - Math.Maxを使用して条件分岐を簡潔に
@@ -854,7 +854,7 @@ public List<ReorderRecommendation> GenerateOrderRecommendations()
 
 2. **チャットビューで高度なドキュメント追加を依頼**
    ```plaintext
-   @workspace 選択範囲のすべてのpublicメソッドとprivateメソッドにXMLドキュメンテーションコメントを追加してください。以下を含めてください：
+   #selection 選択範囲のすべてのpublicメソッドとprivateメソッドにXMLドキュメンテーションコメントを追加してください。以下を含めてください：
    - メソッドの概要（<summary>タグ）
    - 各パラメータの説明（<param>タグ）
    - 戻り値の説明（<returns>タグ）
@@ -1002,7 +1002,7 @@ public int GetStockQuantity(string productId)
 
 2. **チャットビューで包括的リファクタリングを依頼**
    ```plaintext
-   @workspace 選択範囲をリファクタリングしてください。以下の観点で改善してください：
+   #selection 選択範囲をリファクタリングしてください。以下の観点で改善してください：
    - foreachループをLINQのFirstOrDefaultに変換
    - null条件演算子(?.)とnull合体演算子(??)を使用してnull安全性を向上
    - コードを簡潔に
@@ -1036,7 +1036,7 @@ public int GetStockQuantity(string productId)
 
 2. **チャットビューでドキュメント追加を依頼**
    ```plaintext
-   @workspace 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。<summary>、<param>、<returns>、<remarks>、<example>タグを含めて、日本語で記述してください。
+   #selection 選択範囲のすべてのpublicメソッドにXMLドキュメンテーションコメントを追加してください。<summary>、<param>、<returns>、<remarks>、<example>タグを含めて、日本語で記述してください。
    ```
 
 3. **生成されたドキュメンテーションを確認**

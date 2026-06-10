@@ -182,7 +182,7 @@ ShowLowStockAlertメソッドの処理フロー：
 
 3. **包括的な実装指示を送信**
    ```plaintext
-   @workspace ShowLowStockAlertメソッドを実装してください。以下の仕様で作成してください：
+   #codebase ShowLowStockAlertメソッドを実装してください。以下の仕様で作成してください：
 
    1. ProductServiceを使用してすべての商品を取得
    2. 各商品について、StockServiceを使用して現在の在庫数を取得
