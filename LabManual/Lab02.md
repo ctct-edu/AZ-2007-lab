@@ -28,12 +28,11 @@
 
 ### ステップ1: Program.csファイルを開く
 
-1. **ソリューションエクスプローラービューを開く**
+1. **エクスプローラービューを開く**
    - 左サイドバーの**フォルダーアイコン**をクリック
-   - **注意**: 「エクスプローラー」ではなく「ソリューション エクスプローラー」を使用してください
 
 2. **Program.csファイルを開く**
-   - ソリューションエクスプローラーで以下の階層を辿ります：
+   - エクスプローラービューで以下の階層を辿ります：
      ```
      InventoryManagementApp
      └── src
@@ -260,20 +259,21 @@ static void ShowLowStockAlert(ProductService productService, StockService stockS
 ### ステップ1: アプリケーションの準備
 
 1. **ソリューションをクリーン**
-   - ソリューションエクスプローラーで **InventoryManagement.Console** を右クリック
+   - エクスプローラービューで `src/InventoryManagement.Console` フォルダーを展開
+   - **`InventoryManagement.Console.csproj`** を右クリック
    - **「クリーン」** を選択
    - ビルドキャッシュをクリアして確実に最新コードで実行
 
 2. **ソリューションをビルド**
-   - 再度 **InventoryManagement.Console** を右クリック
+   - 再度 **`InventoryManagement.Console.csproj`** を右クリック
    - **「ビルド」** を選択
    - エラーがないことを確認
 
 ### ステップ2: アプリケーションの実行
 
-1. **デバッグ実行を開始**
-   - **InventoryManagement.Console** プロジェクトを右クリック
-   - **「デバッグ」** → **「新しいインスタンスを開始」** を選択
+1. **デバッグなしで実行を開始**
+   - **`InventoryManagement.Console.csproj`** を右クリック
+   - **「デバッグ」** → **「デバッグなしで開始」** を選択
 
 2. **実行環境の確認**
    - コンソールウィンドウが開くことを確認

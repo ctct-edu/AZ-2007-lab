@@ -241,7 +241,8 @@ public List<Product> GetByCategory(string category)
    - **Ctrl + S** でProductService.csファイルを保存
 
 2. **ビルドエラーの確認**
-   - ソリューションエクスプローラーで **InventoryManagement.Console** を右クリック
+   - エクスプローラービューで `src/InventoryManagement.Console` フォルダーを展開
+   - **`InventoryManagement.Console.csproj`** を右クリック
    - **「ビルド」** を選択
    - エラーがないことを確認
 
@@ -670,16 +671,17 @@ Product GetProductById(string productId)
 #### ステップ1: ソリューションのビルド
 
 1. **クリーンビルドの実行**
-   - ソリューションエクスプローラーで **InventoryManagement.Console** を右クリック
+   - エクスプローラービューで `src/InventoryManagement.Console` フォルダーを展開
+   - **`InventoryManagement.Console.csproj`** を右クリック
    - **「クリーン」** を選択
-   - 続いて **「ビルド」** を選択
+   - 再度右クリックして **「ビルド」** を選択
    - エラーがないことを確認
 
 #### ステップ2: アプリケーションの動作テスト
 
 1. **アプリケーションの実行**
-   - **InventoryManagement.Console** プロジェクトを右クリック
-   - **「デバッグ」** → **「新しいインスタンスを開始」**
+   - **`InventoryManagement.Console.csproj`** を右クリック
+   - **「デバッグ」** → **「デバッグなしで開始」**
 
 2. **基本機能の確認**
    - メニューから **「1」** を選択（商品一覧表示）
@@ -1094,9 +1096,10 @@ public int GetStockQuantity(string productId)
    - **Ctrl + K, S** ですべてのファイルを保存
 
 2. **ソリューション全体をクリーンビルド**
-   - ソリューションエクスプローラーで **InventoryManagement.Console** を右クリック
+   - エクスプローラービューで `src/InventoryManagement.Console` フォルダーを展開
+   - **`InventoryManagement.Console.csproj`** を右クリック
    - **「クリーン」** を選択
-   - 続いて **「ビルド」** を選択
+   - 再度右クリックして **「ビルド」** を選択
    - エラーがないことを確認
 
 #### ステップ2: 単体テストの実行
@@ -1115,8 +1118,8 @@ public int GetStockQuantity(string productId)
 #### ステップ3: アプリケーションの統合テスト
 
 1. **アプリケーションの実行**
-   - **InventoryManagement.Console** プロジェクトを右クリック
-   - **「デバッグ」** → **「新しいインスタンスを開始」**
+   - **`InventoryManagement.Console.csproj`** を右クリック
+   - **「デバッグ」** → **「デバッグなしで開始」**
 
 2. **全機能の動作確認**
 
